@@ -1,8 +1,20 @@
-# Getting Started with Create React App
+# WMS Tutorial Application
 
-This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
+An interactive web application that provides tutorials on warehouse processes and demonstrates how a Warehouse Management System (WMS) can optimize these operations.
 
-## Available Scripts
+## Overview
+
+The WMS Tutorial Application is designed to educate warehouse professionals about the benefits and implementation of Warehouse Management Systems. It provides detailed tutorials, videos, and information about key warehouse processes including receiving, putaway, inventory management, picking, packing, shipping, and returns processing.
+
+## Features
+
+- **Interactive Process Dashboard**: Browse and filter warehouse processes by category
+- **Step-by-Step Video Tutorials**: Learn each process with guided video demonstrations
+- **Benefits Analysis**: Understand the advantages of implementing a WMS for each process
+- **KPI Metrics**: Learn about key performance indicators to measure success
+- **Before/After Comparisons**: See how WMS transforms traditional warehouse operations
+
+## Getting Started
 
 In the project directory, you can run:
 

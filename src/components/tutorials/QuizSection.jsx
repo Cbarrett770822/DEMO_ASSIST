@@ -49,7 +49,7 @@ const quizData = {
         "Employee satisfaction",
         "Warehouse temperature",
         "Receiving accuracy",
-        "Marketing ROI"
+        "Delivery time"
       ],
       correctAnswer: 2
     }

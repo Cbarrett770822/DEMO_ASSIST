@@ -3,7 +3,7 @@ import { Box, Button, Typography } from '@mui/material';
 import NavigateNextIcon from '@mui/icons-material/NavigateNext';
 import NavigateBeforeIcon from '@mui/icons-material/NavigateBefore';
 import AssessmentIcon from '@mui/icons-material/Assessment';
-import CalculateIcon from '@mui/icons-material/Calculate';
+// Calculate icon import removed
 
 /**
  * Navigation component for moving between questionnaire sections
@@ -63,12 +63,12 @@ const QuestionnaireNavigation = ({
         
         <Button
           variant="contained"
-          endIcon={isLastSection ? <CalculateIcon /> : <NavigateNextIcon />}
+          endIcon={<NavigateNextIcon />}
           onClick={onNext}
           disabled={disableNext}
           color={isLastSection ? "secondary" : "primary"}
         >
-          {isLastSection ? 'Continue to ROI Calculator' : 'Next'}
+          Next
         </Button>
       </Box>
     </Box>

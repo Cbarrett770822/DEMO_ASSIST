@@ -15,7 +15,6 @@ import SettingsPage from './components/settings/SettingsPage';
 import ProcessesDashboard from './components/dashboard/ProcessesDashboard';
 import FlowPage from './components/tutorials/FlowPage';
 import PresentationsPage from './components/common/PresentationsPage';
-import RecordingPage from './components/recording/RecordingPage';
 
 function App() {
   return (
@@ -29,7 +28,6 @@ function App() {
               <Route path="/flow/:processId" element={<FlowPage />} />
               <Route path="/settings" element={<SettingsPage />} />
               <Route path="/presentations" element={<PresentationsPage />} />
-              <Route path="/recordings" element={<RecordingPage />} />
             </Routes>
           </Layout>
         </Router>

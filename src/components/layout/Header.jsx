@@ -26,7 +26,6 @@ import SettingsIcon from '@mui/icons-material/Settings';
 import SlideshowIcon from '@mui/icons-material/Slideshow';
 import MicIcon from '@mui/icons-material/Mic';
 import CloseIcon from '@mui/icons-material/Close';
-import VideocamIcon from '@mui/icons-material/Videocam';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
 
 const Header = () => {
@@ -45,7 +44,6 @@ const Header = () => {
     { text: 'Home', path: '/', icon: <HomeIcon /> },
     { text: 'Presentations', path: '/presentations', icon: <SlideshowIcon /> },
     { text: 'Process Flows', path: '/processes', icon: <AccountTreeIcon /> },
-    { text: 'Process Recordings', path: '/recordings', icon: <VideocamIcon /> },
     { text: 'Settings', path: '/settings', icon: <SettingsIcon /> }
   ];
 

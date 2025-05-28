@@ -13,7 +13,7 @@ import {
   StepLabel
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
-import CalculateIcon from '@mui/icons-material/Calculate';
+// Calculate icon import removed
 import { 
   selectActiveCompanyId, 
   selectActiveSection, 
@@ -35,7 +35,7 @@ import CompanySelector from './common/CompanySelector';
 import CreateCompanyForm from './common/CreateCompanyForm';
 import QuestionnaireNavigation from './QuestionnaireNavigation';
 import SummaryView from './common/SummaryView';
-import RoiCalculator from '../../roi-calculator/components/RoiCalculator';
+// ROI Calculator import removed
 
 // Import section components
 import CompanyProfile from './sections/CompanyProfile';
@@ -50,7 +50,7 @@ import ContinuousImprovement from './sections/ContinuousImprovement';
 
 const QuestionnaireContainer = () => {
   const dispatch = useDispatch();
-  const [showRoiCalculator, setShowRoiCalculator] = useState(false);
+  // ROI Calculator state removed
   const [isTransitioning, setIsTransitioning] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
   
@@ -92,9 +92,7 @@ const QuestionnaireContainer = () => {
     }
   }, [dispatch, activeCompanyId]);
   
-  const handleToggleRoiCalculator = () => {
-    setShowRoiCalculator(!showRoiCalculator);
-  };
+  // ROI Calculator toggle function removed
   
   const handleBackToCompanies = () => {
     // First set the section back to company profile
@@ -141,10 +139,7 @@ const QuestionnaireContainer = () => {
       );
     }
     
-    // Show ROI calculator if it's active
-    if (showRoiCalculator) {
-      return <RoiCalculator onBack={handleToggleRoiCalculator} />;
-    }
+    // ROI calculator section removed
     
     // Show loading indicator while fetching companies
     if (isLoading) {
@@ -173,17 +168,7 @@ const QuestionnaireContainer = () => {
       return (
         <Box>
           <SummaryView />
-          <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
-            <Button
-              variant="contained"
-              color="primary"
-              size="large"
-              onClick={handleToggleRoiCalculator}
-              startIcon={<CalculateIcon />}
-            >
-              Continue to ROI Calculator
-            </Button>
-          </Box>
+          {/* ROI Calculator button removed */}
         </Box>
       );
     }

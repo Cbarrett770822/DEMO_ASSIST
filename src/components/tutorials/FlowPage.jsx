@@ -13,10 +13,8 @@ import {
 } from '@mui/material';
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import FlowPlayer from './FlowPlayer';
-import BenefitsSection from './BenefitsSection';
-import MetricsSection from './MetricsSection';
-import QuizSection from './QuizSection';
-import DownloadResources from './DownloadResources';
+import EditableBenefitsSection from './EditableBenefitsSection';
+import EditableStepsList from './EditableStepsList';
 import { 
   selectProcess, 
   selectSelectedProcess 
@@ -28,6 +26,7 @@ const FlowPage = () => {
   const navigate = useNavigate();
   const process = useSelector(selectSelectedProcess);
   const [tabValue, setTabValue] = React.useState(0);
+  const isAdmin = useSelector(state => state.auth.user?.role === 'admin');
 
   useEffect(() => {
     // Select the process based on the URL parameter
@@ -76,18 +75,17 @@ const FlowPage = () => {
         </Button>
       </Box>
 
-      <Paper elevation={0} sx={{ mb: 3 }}>
+      <Paper sx={{ mb: 3 }}>
         <Tabs
           value={tabValue}
           onChange={handleTabChange}
-          variant="fullWidth"
-          aria-label="Flow tabs"
+          indicatorColor="primary"
+          textColor="primary"
+          centered
         >
           <Tab label="Flow" />
           <Tab label="Benefits" />
-          <Tab label="KPI Metrics" />
-          <Tab label="Quiz" />
-          <Tab label="Resources" />
+          {isAdmin && <Tab label="Edit Steps" />}
         </Tabs>
       </Paper>
 
@@ -96,19 +94,11 @@ const FlowPage = () => {
       </Box>
 
       <Box sx={{ display: tabValue === 1 ? 'block' : 'none' }}>
-        <BenefitsSection />
+        <EditableBenefitsSection />
       </Box>
-
+      
       <Box sx={{ display: tabValue === 2 ? 'block' : 'none' }}>
-        <MetricsSection />
-      </Box>
-      
-      <Box sx={{ display: tabValue === 3 ? 'block' : 'none' }}>
-        <QuizSection />
-      </Box>
-      
-      <Box sx={{ display: tabValue === 4 ? 'block' : 'none' }}>
-        <DownloadResources />
+        <EditableStepsList />
       </Box>
     </Container>
   );

@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useSelector } from 'react-redux';
 import {
   Box,
@@ -9,23 +9,47 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
-  Grid
+  Grid,
+  Alert
 } from '@mui/material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
 import CompareArrowsIcon from '@mui/icons-material/CompareArrows';
 import { selectSelectedProcess } from '../../features/processes/processesSlice';
+import processData from '../../features/processes/data/processData';
 
 const BenefitsSection = () => {
   const process = useSelector(selectSelectedProcess);
+  const [processWithBenefits, setProcessWithBenefits] = useState(null);
+  
+  useEffect(() => {
+    if (process) {
+      // If the process doesn't have benefits data, try to find it in the original data
+      if (!process.benefits || process.benefits.length === 0) {
+        const originalProcess = processData.find(p => p.id === process.id);
+        if (originalProcess && originalProcess.benefits) {
+          setProcessWithBenefits({
+            ...process,
+            benefits: originalProcess.benefits,
+            beforeAfterComparison: originalProcess.beforeAfterComparison
+          });
+          return;
+        }
+      }
+      setProcessWithBenefits(process);
+    }
+  }, [process]);
 
   if (!process) {
     return null;
   }
+  
+  // Use the enhanced process data with benefits
+  const displayProcess = processWithBenefits || process;
 
   return (
     <Box sx={{ mb: 4 }}>
       <Typography variant="h5" component="h2" gutterBottom>
-        Benefits of WMS for {process.title}
+        Benefits of WMS for {displayProcess.title}
       </Typography>
       
       <Grid container spacing={3}>
@@ -35,8 +59,8 @@ const BenefitsSection = () => {
               Key Benefits
             </Typography>
             <List>
-              {process.benefits && process.benefits.length > 0 ? (
-                process.benefits.map((benefit, index) => (
+              {displayProcess.benefits && displayProcess.benefits.length > 0 ? (
+                displayProcess.benefits.map((benefit, index) => (
                   <ListItem key={index} alignItems="flex-start">
                     <ListItemIcon>
                       <CheckCircleOutlineIcon color="success" />
@@ -72,8 +96,8 @@ const BenefitsSection = () => {
               <Divider sx={{ mb: 2 }} />
               
               <Box sx={{ flexGrow: 1, overflow: 'auto' }}>
-                {process.beforeAfterComparison && process.beforeAfterComparison.before ? (
-                  process.beforeAfterComparison.before.map((item, index) => (
+                {displayProcess.beforeAfterComparison && displayProcess.beforeAfterComparison.before ? (
+                  displayProcess.beforeAfterComparison.before.map((item, index) => (
                     <Box key={index} sx={{ display: 'flex', mb: 2 }}>
                       <Typography 
                         variant="body2" 
@@ -95,7 +119,7 @@ const BenefitsSection = () => {
                           fontWeight: 'medium'
                         }}
                       >
-                        {process.beforeAfterComparison.after && process.beforeAfterComparison.after[index]}
+                        {displayProcess.beforeAfterComparison.after && displayProcess.beforeAfterComparison.after[index]}
                       </Typography>
                     </Box>
                   ))

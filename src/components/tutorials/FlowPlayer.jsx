@@ -33,6 +33,7 @@ const FlowPlayer = () => {
   const currentStep = useSelector(selectCurrentStep);
   const isPlaying = useSelector(state => state.processes.isVideoPlaying);
   const playerRef = useRef(null);
+  const iframeRef = useRef(null);
   const [isFullscreen, setIsFullscreen] = useState(false);
 
   // If no process is selected, show a message
@@ -62,8 +63,37 @@ const FlowPlayer = () => {
   };
 
   const handleFullscreen = () => {
-    // Get the player wrapper element instead of the internal player
-    if (playerRef.current) {
+    if (isGoogleDrive && iframeRef.current) {
+      // Handle fullscreen for Google Drive iframe
+      const iframe = iframeRef.current;
+      
+      if (document.fullscreenElement) {
+        // Exit fullscreen if already in fullscreen mode
+        if (document.exitFullscreen) {
+          document.exitFullscreen();
+        } else if (document.webkitExitFullscreen) {
+          document.webkitExitFullscreen();
+        } else if (document.mozCancelFullScreen) {
+          document.mozCancelFullScreen();
+        } else if (document.msExitFullscreen) {
+          document.msExitFullscreen();
+        }
+        setIsFullscreen(false);
+      } else {
+        // Enter fullscreen for iframe
+        if (iframe.requestFullscreen) {
+          iframe.requestFullscreen();
+        } else if (iframe.webkitRequestFullscreen) {
+          iframe.webkitRequestFullscreen();
+        } else if (iframe.mozRequestFullScreen) {
+          iframe.mozRequestFullScreen();
+        } else if (iframe.msRequestFullscreen) {
+          iframe.msRequestFullscreen();
+        }
+        setIsFullscreen(true);
+      }
+    } else if (playerRef.current) {
+      // Handle fullscreen for ReactPlayer
       const playerWrapper = playerRef.current.wrapper;
       
       if (playerWrapper) {
@@ -105,12 +135,95 @@ const FlowPlayer = () => {
   
   // Safe access to video URL
   let videoUrl = '';
+  let isGoogleDrive = false;
+  
   if (currentStepData && currentStepData.videoUrl) {
-    videoUrl = typeof currentStepData.videoUrl === 'string' && currentStepData.videoUrl.startsWith('http') ?
-      currentStepData.videoUrl : 
-      `/videos/${currentStepData.videoUrl}`;
+    // Handle different video URL formats
+    if (typeof currentStepData.videoUrl === 'string') {
+      if (currentStepData.videoUrl.startsWith('http')) {
+        // Check if it's a Google Drive URL
+        if (currentStepData.videoUrl.includes('drive.google.com')) {
+          isGoogleDrive = true;
+          // Convert Google Drive link to direct download link
+          const fileId = extractGoogleDriveFileId(currentStepData.videoUrl);
+          if (fileId) {
+            videoUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+          } else {
+            videoUrl = currentStepData.videoUrl;
+          }
+        } else {
+          videoUrl = currentStepData.videoUrl;
+        }
+      } else {
+        // For local videos, ensure we have the correct path
+        videoUrl = `/videos/${currentStepData.videoUrl}`;
+      }
+    }
   } else if (process.videoUrl) {
-    videoUrl = process.videoUrl;
+    // Use process-level video URL as fallback
+    if (typeof process.videoUrl === 'string') {
+      if (process.videoUrl.startsWith('http')) {
+        // Check if it's a Google Drive URL
+        if (process.videoUrl.includes('drive.google.com')) {
+          isGoogleDrive = true;
+          // Convert Google Drive link to direct download link
+          const fileId = extractGoogleDriveFileId(process.videoUrl);
+          if (fileId) {
+            videoUrl = `https://drive.google.com/uc?export=download&id=${fileId}`;
+          } else {
+            videoUrl = process.videoUrl;
+          }
+        } else {
+          videoUrl = process.videoUrl;
+        }
+      } else {
+        videoUrl = `/videos/${process.videoUrl}`;
+      }
+    }
+  }
+  
+  // Default video if none is specified
+  if (!videoUrl) {
+    videoUrl = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+  }
+  
+  console.log('Current video URL:', videoUrl, 'Is Google Drive:', isGoogleDrive);
+  
+  // Function to extract Google Drive file ID from URL
+  function extractGoogleDriveFileId(url) {
+    // Handle different Google Drive URL formats
+    let fileId = null;
+    
+    // Format: https://drive.google.com/file/d/FILE_ID/view
+    if (url.includes('/file/d/')) {
+      const match = url.match(/\/file\/d\/([^\/]+)/);
+      if (match && match[1]) {
+        fileId = match[1];
+      }
+    }
+    // Format: https://drive.google.com/open?id=FILE_ID
+    else if (url.includes('open?id=')) {
+      const match = url.match(/open\?id=([^\/&]+)/);
+      if (match && match[1]) {
+        fileId = match[1];
+      }
+    }
+    // Format: https://docs.google.com/presentation/d/FILE_ID/edit
+    else if (url.includes('/presentation/d/')) {
+      const match = url.match(/\/presentation\/d\/([^\/]+)/);
+      if (match && match[1]) {
+        fileId = match[1];
+      }
+    }
+    // Format: https://docs.google.com/document/d/FILE_ID/edit
+    else if (url.includes('/document/d/')) {
+      const match = url.match(/\/document\/d\/([^\/]+)/);
+      if (match && match[1]) {
+        fileId = match[1];
+      }
+    }
+    
+    return fileId;
   }
 
   return (
@@ -129,40 +242,72 @@ const FlowPlayer = () => {
             elevation={3} 
             sx={{ 
               position: 'relative',
+              paddingTop: '56.25%', // 16:9 aspect ratio
               '& .react-player': {
+                position: 'absolute',
+                top: 0,
+                left: 0,
                 width: '100% !important',
-                height: 'auto !important',
-                aspectRatio: '16/9'
+                height: '100% !important'
               }
             }}
           >
-            <ReactPlayer
-              ref={playerRef}
-              url={videoUrl}
-              playing={isPlaying}
-              controls={false}
-              width="100%"
-              height="100%"
-              onEnded={() => {
-                if (currentStep < process.steps.length - 1) {
-                  dispatch(nextStep());
-                } else {
-                  dispatch(setVideoPlaying(false));
-                }
-              }}
-              className="react-player"
-              config={{
-                youtube: {
-                  playerVars: { showinfo: 0, controls: 0, modestbranding: 1 }
-                },
-                file: {
-                  attributes: {
-                    controlsList: 'nodownload',
-                    disablePictureInPicture: true
+            {isGoogleDrive ? (
+              // For Google Drive videos, use an iframe with direct embed URL
+              <iframe
+                ref={iframeRef}
+                src={videoUrl.replace('uc?export=download&id=', 'file/d/').concat('/preview')}
+                width="100%"
+                height="100%"
+                allow="autoplay; encrypted-media; fullscreen"
+                allowFullScreen
+                title="Google Drive Video"
+                style={{
+                  border: 'none',
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%'
+                }}
+              />
+            ) : (
+              // For other videos, use ReactPlayer
+              <ReactPlayer
+                ref={playerRef}
+                url={videoUrl}
+                playing={isPlaying}
+                controls={true}
+                width="100%"
+                height="100%"
+                onEnded={() => {
+                  if (currentStep < process.steps.length - 1) {
+                    dispatch(nextStep());
+                  } else {
+                    dispatch(setVideoPlaying(false));
                   }
-                }
-              }}
-            />
+                }}
+                className="react-player"
+                config={{
+                  youtube: {
+                    playerVars: { 
+                      showinfo: 1, 
+                      controls: 1, 
+                      modestbranding: 1,
+                      origin: window.location.origin 
+                    }
+                  },
+                  file: {
+                    attributes: {
+                      controlsList: 'nodownload',
+                      disablePictureInPicture: true
+                    },
+                    forceVideo: true
+                  }
+                }}
+                onError={(e) => console.error('ReactPlayer error:', e)}
+              />
+            )}
             <Box
               sx={{
                 position: 'absolute',

@@ -1,4 +1,4 @@
-// Process data for the WMS Tutorial App
+// Process data for the WMS Demo Assist
 // This file contains information about warehouse processes, their benefits, metrics, and tutorial content
 
 const processData = [

@@ -15,10 +15,13 @@ import {
   ListItemText,
   ListItemIcon,
   Divider,
-  Avatar
+  Avatar,
+  Menu,
+  MenuItem,
+  Tooltip
 } from '@mui/material';
 import { Link as RouterLink, useLocation } from 'react-router-dom';
-// Removed warehouse icon import
+import { useSelector } from 'react-redux';
 import MenuIcon from '@mui/icons-material/Menu';
 import HomeIcon from '@mui/icons-material/Home';
 import CategoryIcon from '@mui/icons-material/Category';
@@ -27,25 +30,56 @@ import SlideshowIcon from '@mui/icons-material/Slideshow';
 import MicIcon from '@mui/icons-material/Mic';
 import CloseIcon from '@mui/icons-material/Close';
 import AccountTreeIcon from '@mui/icons-material/AccountTree';
+import LogoutIcon from '@mui/icons-material/Logout';
+import AccountCircleIcon from '@mui/icons-material/AccountCircle';
+import PeopleIcon from '@mui/icons-material/People';
+import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import { selectCurrentUser, selectIsSupervisor, selectIsAdmin } from '../../features/auth/authSlice';
 
-const Header = () => {
+const Header = ({ onLogout }) => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const location = useLocation();
+  const currentUser = useSelector(selectCurrentUser);
+  const isSupervisor = useSelector(selectIsSupervisor);
+  const isAdmin = useSelector(selectIsAdmin);
+  const [userMenuAnchor, setUserMenuAnchor] = useState(null);
   
   const isActive = (path) => location.pathname === path;
 
   const toggleDrawer = () => {
     setDrawerOpen(!drawerOpen);
   };
+  
+  const handleOpenUserMenu = (event) => {
+    setUserMenuAnchor(event.currentTarget);
+  };
+  
+  const handleCloseUserMenu = () => {
+    setUserMenuAnchor(null);
+  };
+  
+  const handleLogout = () => {
+    handleCloseUserMenu();
+    if (onLogout) onLogout();
+  };
 
   const menuItems = [
     { text: 'Home', path: '/', icon: <HomeIcon /> },
     { text: 'Presentations', path: '/presentations', icon: <SlideshowIcon /> },
-    { text: 'Process Flows', path: '/processes', icon: <AccountTreeIcon /> },
-    { text: 'Settings', path: '/settings', icon: <SettingsIcon /> }
+    { text: 'Process Flows', path: '/processes', icon: <AccountTreeIcon /> }
   ];
+  
+  // Add Settings link for admins only
+  if (isAdmin) {
+    menuItems.push({ text: 'Settings', path: '/settings', icon: <SettingsIcon /> });
+  }
+  
+  // Add User Management link for supervisors and admins
+  if (isSupervisor) {
+    menuItems.push({ text: 'User Management', path: '/users', icon: <PeopleIcon /> });
+  }
 
   const drawer = (
     <Box sx={{ width: 280, pt: 2 }}>
@@ -86,6 +120,30 @@ const Header = () => {
             />
           </ListItem>
         ))}
+        
+        {/* Logout button in drawer */}
+        <ListItem 
+          button 
+          onClick={() => {
+            toggleDrawer();
+            if (onLogout) onLogout();
+          }}
+          sx={{
+            '&:hover': {
+              bgcolor: 'rgba(211, 47, 47, 0.04)'
+            }
+          }}
+        >
+          <ListItemIcon sx={{ color: theme.palette.error.main }}>
+            <LogoutIcon />
+          </ListItemIcon>
+          <ListItemText 
+            primary="Logout" 
+            primaryTypographyProps={{ 
+              color: theme.palette.error.main
+            }} 
+          />
+        </ListItem>
       </List>
       <Divider />
       <Box sx={{ p: 2, mt: 2 }}>
@@ -143,6 +201,44 @@ const Header = () => {
             >
               Infor WMS Demo by Charles Barrett
             </Typography>
+          </Box>
+          
+          {/* User Menu */}
+          <Box sx={{ ml: 2, display: 'flex', alignItems: 'center' }}>
+            <Tooltip title="Account settings">
+              <Button 
+                onClick={handleOpenUserMenu} 
+                sx={{ 
+                  textTransform: 'none',
+                  color: 'inherit',
+                  '&:hover': { bgcolor: 'rgba(0,0,0,0.04)' }
+                }}
+                endIcon={<ArrowDropDownIcon />}
+              >
+                <AccountCircleIcon sx={{ mr: 1 }} />
+                {currentUser?.name || currentUser?.username}
+              </Button>
+            </Tooltip>
+            <Menu
+              anchorEl={userMenuAnchor}
+              open={Boolean(userMenuAnchor)}
+              onClose={handleCloseUserMenu}
+              anchorOrigin={{
+                vertical: 'bottom',
+                horizontal: 'right',
+              }}
+              transformOrigin={{
+                vertical: 'top',
+                horizontal: 'right',
+              }}
+            >
+              <MenuItem onClick={handleLogout}>
+                <ListItemIcon>
+                  <LogoutIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>Logout</ListItemText>
+              </MenuItem>
+            </Menu>
           </Box>
           
           {isMobile ? (

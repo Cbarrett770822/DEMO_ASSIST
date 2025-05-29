@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { loadPresentations } from '../../services/storageService';
+import { useSelector } from 'react-redux';
+import { getPresentations } from '../../services/presentationService';
+import { selectIsAdmin } from '../../features/auth/authSlice';
 import { 
   Container, 
   Typography, 
@@ -23,34 +25,12 @@ import AddIcon from '@mui/icons-material/Add';
 import PptViewer from './PptViewer';
 
 const PresentationsPage = () => {
-  // Default presentations if none are stored
-  const defaultPresentations = [
-    {
-      id: 1,
-      title: 'WMS Introduction',
-      url: 'https://wms-presentations.s3.amazonaws.com/wms-introduction.pptx',
-      description: 'An introduction to Warehouse Management Systems and their benefits',
-      isLocal: false
-    },
-    {
-      id: 2,
-      title: 'Inbound Processes',
-      url: 'https://wms-presentations.s3.amazonaws.com/inbound-processes.pptx',
-      description: 'Detailed overview of receiving and putaway processes',
-      isLocal: false
-    }
-  ];
-  
+  const isAdmin = useSelector(selectIsAdmin);
   const [presentations, setPresentations] = useState([]);
   
-  // Load presentations from localStorage on component mount
+  // Load presentations using the presentation service
   useEffect(() => {
-    const storedPresentations = loadPresentations();
-    if (storedPresentations && storedPresentations.length > 0) {
-      setPresentations(storedPresentations);
-    } else {
-      setPresentations(defaultPresentations);
-    }
+    setPresentations(getPresentations());
   }, []);
   const [selectedPresentation, setSelectedPresentation] = useState(null);
   
@@ -133,11 +113,19 @@ const PresentationsPage = () => {
               </CardContent>
             </Card>
             
-            <Alert severity="info" sx={{ mt: 3 }}>
-              <Typography variant="body2">
-                To add or manage presentations, go to the <strong>Settings</strong> page.
-              </Typography>
-            </Alert>
+            {isAdmin ? (
+              <Alert severity="info" sx={{ mt: 3 }}>
+                <Typography variant="body2">
+                  To add or manage presentations, go to the <strong>Settings</strong> page.
+                </Typography>
+              </Alert>
+            ) : (
+              <Alert severity="info" sx={{ mt: 3 }}>
+                <Typography variant="body2">
+                  Contact an administrator to add or manage presentations.
+                </Typography>
+              </Alert>
+            )}
           </Grid>
           
           <Grid item xs={12} md={8}>

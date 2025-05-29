@@ -1,10 +1,16 @@
 [build]
   command = "CI= npm run build"
   publish = "build"
+  functions = "netlify/functions"
 
 [dev]
   command = "npm start"
   port = 3000
+
+[[redirects]]
+  from = "/api/*"
+  to = "/.netlify/functions/:splat"
+  status = 200
 
 [[redirects]]
   from = "/*"

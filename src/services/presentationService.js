@@ -1,5 +1,6 @@
 // Service for managing presentations
-import { loadPresentations } from './storageService';
+import { fetchPresentations, savePresentationsToApi } from './apiService';
+import { loadPresentations, savePresentations as saveToLocalStorage } from './storageService';
 
 // Default presentations if none are stored
 const defaultPresentations = [
@@ -21,22 +22,57 @@ const defaultPresentations = [
 
 /**
  * Get all presentations
- * @returns {Array} Array of presentation objects
+ * @returns {Promise<Array>} Promise that resolves to an array of presentation objects
  */
-export const getPresentations = () => {
-  const storedPresentations = loadPresentations();
-  if (storedPresentations && storedPresentations.length > 0) {
-    return storedPresentations;
+export const getPresentations = async () => {
+  try {
+    // First try to get presentations from the API
+    const apiPresentations = await fetchPresentations();
+    return apiPresentations;
+  } catch (error) {
+    console.error('Error fetching presentations from API, falling back to localStorage:', error);
+    
+    // If API fails, fall back to localStorage
+    const storedPresentations = loadPresentations();
+    if (storedPresentations && storedPresentations.length > 0) {
+      return storedPresentations;
+    }
+    
+    // If nothing in localStorage, return defaults
+    return defaultPresentations;
   }
-  return defaultPresentations;
+};
+
+/**
+ * Save presentations
+ * @param {Array} presentations - Array of presentation objects to save
+ * @returns {Promise<Object>} Promise that resolves when presentations are saved
+ */
+export const savePresentations = async (presentations) => {
+  try {
+    // First try to save to the API
+    await savePresentationsToApi(presentations);
+    
+    // Also save to localStorage as a backup
+    saveToLocalStorage(presentations);
+    
+    return { success: true };
+  } catch (error) {
+    console.error('Error saving presentations to API, falling back to localStorage only:', error);
+    
+    // If API fails, at least save to localStorage
+    saveToLocalStorage(presentations);
+    
+    return { success: false, error: error.message };
+  }
 };
 
 /**
  * Get a presentation by ID
  * @param {number} id - The presentation ID
- * @returns {Object|null} The presentation object or null if not found
+ * @returns {Promise<Object|null>} Promise that resolves to the presentation object or null if not found
  */
-export const getPresentationById = (id) => {
-  const presentations = getPresentations();
+export const getPresentationById = async (id) => {
+  const presentations = await getPresentations();
   return presentations.find(p => p.id === id) || null;
 };

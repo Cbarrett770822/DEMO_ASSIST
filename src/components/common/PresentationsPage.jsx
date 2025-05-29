@@ -6,33 +6,40 @@ import {
   Container, 
   Typography, 
   Box, 
-  TextField, 
-  Button, 
   Grid, 
   Card, 
   CardContent, 
-  CardActions,
-  List,
-  ListItem,
-  ListItemText,
-  ListItemIcon,
-  Divider,
-  Alert,
-  Snackbar
+  Alert, 
+  CircularProgress
 } from '@mui/material';
 import SlideshowIcon from '@mui/icons-material/Slideshow';
-import AddIcon from '@mui/icons-material/Add';
 import PptViewer from './PptViewer';
 
 const PresentationsPage = () => {
   const isAdmin = useSelector(selectIsAdmin);
   const [presentations, setPresentations] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [selectedPresentation, setSelectedPresentation] = useState(null);
   
   // Load presentations using the presentation service
   useEffect(() => {
-    setPresentations(getPresentations());
+    const loadPresentations = async () => {
+      try {
+        setLoading(true);
+        const data = await getPresentations();
+        setPresentations(data);
+        setError(null);
+      } catch (err) {
+        console.error('Error loading presentations:', err);
+        setError('Failed to load presentations. Please try again later.');
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    loadPresentations();
   }, []);
-  const [selectedPresentation, setSelectedPresentation] = useState(null);
   
   const handlePresentationSelect = (presentation) => {
     setSelectedPresentation(presentation);
@@ -45,6 +52,23 @@ const PresentationsPage = () => {
           PowerPoint Presentations
         </Typography>
         
+        <Typography variant="body1" paragraph>
+          Browse and view presentations related to warehouse management processes.
+        </Typography>
+        
+        {loading && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+            <CircularProgress />
+          </Box>
+        )}
+        
+        {error && (
+          <Alert severity="error" sx={{ mb: 3 }}>
+            {error}
+          </Alert>
+        )}
+      
+      {!loading && !error && (
         <Grid container spacing={4}>
           <Grid item xs={12} md={4}>
             <Card elevation={3}>
@@ -153,7 +177,7 @@ const PresentationsPage = () => {
                   Select a presentation from the list to view it
                 </Typography>
                 <Typography variant="body2" color="text.secondary" sx={{ mt: 1 }}>
-                  Or add a new presentation using the form below
+                  Browse presentations from the list on the left
                 </Typography>
               </Box>
             )}
@@ -166,9 +190,8 @@ const PresentationsPage = () => {
             </Alert>
           </Grid>
         </Grid>
+      )}
       </Box>
-      
-      {/* Snackbar removed */}
     </Container>
   );
 };

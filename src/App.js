@@ -16,9 +16,10 @@ import ProcessesDashboard from './components/dashboard/ProcessesDashboard';
 import FlowPage from './components/tutorials/FlowPage';
 import PresentationsPage from './components/common/PresentationsPage';
 import LoginPage from './components/auth/LoginPage';
-import UserManagement from './components/admin/UserManagement';
+import UserProfile from './components/auth/UserProfile';
+import UserManagement from './components/settings/UserManagement';
 import { ProtectedRoute, AdminRoute, SupervisorRoute } from './components/auth/ProtectedRoute';
-import { selectIsAuthenticated, logout } from './features/auth/authSlice';
+import { selectIsAuthenticated, logout, checkAuthState } from './features/auth/authSlice';
 
 // App wrapper with Redux Provider
 function App() {
@@ -37,6 +38,11 @@ function App() {
 function AppContent() {
   const isAuthenticated = useSelector(selectIsAuthenticated);
   const dispatch = useDispatch();
+  
+  // Check authentication state on app load
+  useEffect(() => {
+    dispatch(checkAuthState());
+  }, [dispatch]);
   
   // Handle logout
   const handleLogout = () => {
@@ -86,6 +92,14 @@ function AppContent() {
           isAuthenticated ? 
           <Layout onLogout={handleLogout}>
             <PresentationsPage />
+          </Layout> : 
+          <Navigate to="/login" />
+        } />
+        
+        <Route path="/profile" element={
+          isAuthenticated ? 
+          <Layout onLogout={handleLogout}>
+            <UserProfile />
           </Layout> : 
           <Navigate to="/login" />
         } />

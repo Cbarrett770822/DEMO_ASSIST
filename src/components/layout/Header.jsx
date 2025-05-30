@@ -232,6 +232,17 @@ const Header = ({ onLogout }) => {
                 horizontal: 'right',
               }}
             >
+              <MenuItem 
+                component={RouterLink} 
+                to="/profile"
+                onClick={handleCloseUserMenu}
+              >
+                <ListItemIcon>
+                  <AccountCircleIcon fontSize="small" />
+                </ListItemIcon>
+                <ListItemText>My Profile</ListItemText>
+              </MenuItem>
+              <Divider />
               <MenuItem onClick={handleLogout}>
                 <ListItemIcon>
                   <LogoutIcon fontSize="small" />

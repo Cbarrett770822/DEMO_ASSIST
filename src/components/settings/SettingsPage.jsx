@@ -3,6 +3,7 @@ import { useSelector, useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import PresentationSettings from './PresentationSettings';
 import ProcessManagement from './ProcessManagement';
+import UserManagement from './UserManagement';
 import {
   Box,
   Container,
@@ -33,11 +34,13 @@ import RestoreIcon from '@mui/icons-material/Restore';
 import { clearProcesses } from '../../services/storageService';
 import processData from '../../features/processes/data/processData';
 import { selectProcesses, updateProcesses } from '../../features/processes/processesSlice';
+import { selectIsAdmin } from '../../features/auth/authSlice';
 
 const SettingsPage = () => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
   const processes = useSelector(selectProcesses);
+  const isAdmin = useSelector(selectIsAdmin);
   const [selectedProcess, setSelectedProcess] = useState('');
   const [selectedStep, setSelectedStep] = useState('');
   const [videoSource, setVideoSource] = useState('online');
@@ -360,6 +363,17 @@ const SettingsPage = () => {
             </Button>
           </AccordionDetails>
         </Accordion>
+        
+        {isAdmin && (
+          <Accordion>
+            <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+              <Typography variant="h6">User Management</Typography>
+            </AccordionSummary>
+            <AccordionDetails>
+              <UserManagement />
+            </AccordionDetails>
+          </Accordion>
+        )}
       </Box>
       
       <Snackbar

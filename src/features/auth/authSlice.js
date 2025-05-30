@@ -1,33 +1,29 @@
 import { createSlice } from '@reduxjs/toolkit';
-import { 
-  authenticateUser, 
-  logoutUser, 
-  getCurrentUser, 
-  createSession, 
-  clearSession, 
-  getCurrentSession, 
-  isSessionValid,
-  initializeUsers
-} from '../../services/auth/authService';
-
-// Initialize users with default admin if needed
-initializeUsers();
+import {
+  login as loginApi,
+  logout as logoutApi,
+  getCurrentUser,
+  getUserFromStorage,
+  isAuthenticated
+} from '../../services/authService';
 
 // Check if there's an active session
 const checkInitialSession = () => {
-  const currentUser = getCurrentUser();
-  if (currentUser) {
+  if (isAuthenticated()) {
+    const user = getUserFromStorage();
     return {
       isAuthenticated: true,
-      user: currentUser,
-      error: null
+      user,
+      error: null,
+      loading: false
     };
   }
   
   return {
     isAuthenticated: false,
     user: null,
-    error: null
+    error: null,
+    loading: false
   };
 };
 
@@ -48,11 +44,14 @@ export const authSlice = createSlice({
       state.error = action.payload;
     },
     logout: (state) => {
-      // Use the logoutUser service which saves user settings before logging out
-      logoutUser();
+      // Use the logout service to clear token and user data
+      logoutApi();
       state.isAuthenticated = false;
       state.user = null;
       state.error = null;
+    },
+    setLoading: (state, action) => {
+      state.loading = action.payload;
     },
     clearError: (state) => {
       state.error = null;
@@ -60,19 +59,40 @@ export const authSlice = createSlice({
   }
 });
 
-export const { loginSuccess, loginFailure, logout, clearError } = authSlice.actions;
+export const { loginSuccess, loginFailure, logout, clearError, setLoading } = authSlice.actions;
 
 // Thunk for login
-export const login = (username, password) => (dispatch) => {
-  const result = authenticateUser(username, password);
-  
-  if (result.success) {
-    createSession(result.user);
-    dispatch(loginSuccess(result.user));
+export const login = (username, password) => async (dispatch) => {
+  try {
+    dispatch(setLoading(true));
+    dispatch(clearError());
+    
+    const user = await loginApi(username, password);
+    dispatch(loginSuccess(user));
     return true;
-  } else {
-    dispatch(loginFailure(result.message));
+  } catch (error) {
+    dispatch(loginFailure(error.message));
     return false;
+  } finally {
+    dispatch(setLoading(false));
+  }
+};
+
+// Thunk for checking current user
+export const checkAuthState = () => async (dispatch) => {
+  try {
+    dispatch(setLoading(true));
+    
+    const user = await getCurrentUser();
+    if (user) {
+      dispatch(loginSuccess(user));
+    } else {
+      dispatch(logout());
+    }
+  } catch (error) {
+    dispatch(logout());
+  } finally {
+    dispatch(setLoading(false));
   }
 };
 
@@ -81,6 +101,7 @@ export const selectAuth = (state) => state.auth;
 export const selectIsAuthenticated = (state) => state.auth.isAuthenticated;
 export const selectCurrentUser = (state) => state.auth.user;
 export const selectAuthError = (state) => state.auth.error;
+export const selectIsLoading = (state) => state.auth.loading;
 export const selectIsAdmin = (state) => 
   state.auth.isAuthenticated && state.auth.user?.role === 'admin';
 export const selectIsSupervisor = (state) => 

@@ -2,13 +2,35 @@
  * Storage Service
  * 
  * This service provides functions to save and load data to/from localStorage.
- * It's used to persist video assignments and presentations between app sessions.
+ * It's used to persist video assignments, presentations, and settings between app sessions.
  */
 
 // Keys for storing data in localStorage
 const PROCESS_DATA_KEY = 'wms_process_data';
 const PRESENTATIONS_KEY = 'wms_presentations';
 const NOTES_KEY = 'wms_voice_notes';
+const SETTINGS_KEY = 'wms_settings';
+const USER_SETTINGS_PREFIX = 'wms_user_settings_';
+
+// Get the current user ID from localStorage
+const getCurrentUserId = () => {
+  try {
+    const userJson = localStorage.getItem('wms_auth_user');
+    if (userJson) {
+      const user = JSON.parse(userJson);
+      return user.id || 'guest';
+    }
+  } catch (error) {
+    console.error('Error getting current user ID:', error);
+  }
+  return 'guest';
+};
+
+// Get the storage key for the current user's settings
+const getUserSettingsKey = () => {
+  const userId = getCurrentUserId();
+  return `${USER_SETTINGS_PREFIX}${userId}`;
+};
 
 /**
  * Save processes data to localStorage
@@ -160,6 +182,89 @@ export const clearNotes = () => {
     return true;
   } catch (error) {
     console.error('Error clearing notes from localStorage:', error);
+    return false;
+  }
+};
+
+/**
+ * Save settings to localStorage
+ * @param {Object} settings - Settings object
+ * @param {boolean} isUserSpecific - Whether the settings are user-specific
+ * @returns {boolean} - True if successful, false otherwise
+ */
+export const saveSettings = (settings, isUserSpecific = true) => {
+  try {
+    // Save to global settings
+    localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
+    
+    // If user-specific, also save to user-specific settings
+    if (isUserSpecific) {
+      const userSettingsKey = getUserSettingsKey();
+      localStorage.setItem(userSettingsKey, JSON.stringify(settings));
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error saving settings to localStorage:', error);
+    return false;
+  }
+};
+
+/**
+ * Load settings from localStorage
+ * @param {boolean} isUserSpecific - Whether to load user-specific settings
+ * @returns {Object|null} - Settings object or null if not found
+ */
+export const loadSettings = (isUserSpecific = true) => {
+  try {
+    // Try to load user-specific settings first if requested
+    if (isUserSpecific) {
+      const userSettingsKey = getUserSettingsKey();
+      const userSettings = localStorage.getItem(userSettingsKey);
+      if (userSettings) {
+        return JSON.parse(userSettings);
+      }
+    }
+    
+    // Fall back to global settings
+    const globalSettings = localStorage.getItem(SETTINGS_KEY);
+    return globalSettings ? JSON.parse(globalSettings) : null;
+  } catch (error) {
+    console.error('Error loading settings from localStorage:', error);
+    return null;
+  }
+};
+
+/**
+ * Check if settings exist in localStorage
+ * @param {boolean} isUserSpecific - Whether to check for user-specific settings
+ * @returns {boolean} - True if settings exist, false otherwise
+ */
+export const hasStoredSettings = (isUserSpecific = true) => {
+  if (isUserSpecific) {
+    const userSettingsKey = getUserSettingsKey();
+    return localStorage.getItem(userSettingsKey) !== null;
+  }
+  return localStorage.getItem(SETTINGS_KEY) !== null;
+};
+
+/**
+ * Clear settings from localStorage
+ * @param {boolean} isUserSpecific - Whether to clear user-specific settings
+ * @returns {boolean} - True if successful, false otherwise
+ */
+export const clearSettings = (isUserSpecific = true) => {
+  try {
+    localStorage.removeItem(SETTINGS_KEY);
+    
+    if (isUserSpecific) {
+      const userSettingsKey = getUserSettingsKey();
+      localStorage.removeItem(userSettingsKey);
+    }
+    
+    return true;
+  } catch (error) {
+    console.error('Error clearing settings from localStorage:', error);
     return false;
   }
 };

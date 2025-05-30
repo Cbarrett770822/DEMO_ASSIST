@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
-import { getPresentations } from '../../services/presentationService';
-import { selectIsAdmin } from '../../features/auth/authSlice';
+import { getPresentations, addPresentation, updatePresentation, deletePresentation } from '../../services/presentationService';
+import { selectIsAdmin, selectIsAuthenticated } from '../../features/auth/authSlice';
 import { 
   Container, 
   Typography, 
@@ -17,10 +17,12 @@ import PptViewer from './PptViewer';
 
 const PresentationsPage = () => {
   const isAdmin = useSelector(selectIsAdmin);
+  const isAuthenticated = useSelector(selectIsAuthenticated);
   const [presentations, setPresentations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedPresentation, setSelectedPresentation] = useState(null);
+  const [retryCount, setRetryCount] = useState(0);
   
   // Load presentations using the presentation service
   useEffect(() => {
@@ -30,19 +32,42 @@ const PresentationsPage = () => {
         const data = await getPresentations();
         setPresentations(data);
         setError(null);
+        
+        // If there's a selected presentation, update it with the latest data
+        if (selectedPresentation) {
+          const updated = data.find(p => p.id === selectedPresentation.id || 
+                                      String(p.id) === String(selectedPresentation.id));
+          if (updated) {
+            setSelectedPresentation(updated);
+          }
+        }
       } catch (err) {
         console.error('Error loading presentations:', err);
         setError('Failed to load presentations. Please try again later.');
+        
+        // Retry loading after a delay if authentication state changes
+        if (retryCount < 3 && isAuthenticated) {
+          setTimeout(() => {
+            setRetryCount(prev => prev + 1);
+          }, 2000);
+        }
       } finally {
         setLoading(false);
       }
     };
     
     loadPresentations();
-  }, []);
+  }, [isAuthenticated, retryCount, selectedPresentation?.id]);
   
   const handlePresentationSelect = (presentation) => {
     setSelectedPresentation(presentation);
+  };
+  
+  // Handle presentation errors
+  const handlePresentationError = (message) => {
+    setError(message || 'An error occurred with the presentation');
+    // Clear error after 5 seconds
+    setTimeout(() => setError(null), 5000);
   };
   
   return (
@@ -87,8 +112,12 @@ const PresentationsPage = () => {
                           display: 'flex',
                           flexDirection: 'column',
                           cursor: 'pointer',
-                          bgcolor: selectedPresentation?.id === presentation.id ? 'rgba(25, 118, 210, 0.08)' : 'transparent',
-                          border: selectedPresentation?.id === presentation.id ? '1px solid #1976d2' : '1px solid rgba(0, 0, 0, 0.12)',
+                          bgcolor: selectedPresentation?.id === presentation.id || 
+                                  String(selectedPresentation?.id) === String(presentation.id) ? 
+                                  'rgba(25, 118, 210, 0.08)' : 'transparent',
+                          border: selectedPresentation?.id === presentation.id || 
+                                 String(selectedPresentation?.id) === String(presentation.id) ? 
+                                 '1px solid #1976d2' : '1px solid rgba(0, 0, 0, 0.12)',
                           '&:hover': {
                             boxShadow: '0 2px 8px rgba(0,0,0,0.1)',
                             borderColor: '#1976d2'

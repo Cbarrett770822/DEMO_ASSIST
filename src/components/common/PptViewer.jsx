@@ -1,20 +1,64 @@
 import React, { useState, useEffect } from 'react';
-import { Box, Typography, Paper, Alert, Button } from '@mui/material';
+import { 
+  Box, 
+  Typography, 
+  Paper, 
+  Alert, 
+  Button, 
+  CircularProgress, 
+  Tabs, 
+  Tab,
+  Link,
+  Divider
+} from '@mui/material';
+import DownloadIcon from '@mui/icons-material/Download';
+import OpenInNewIcon from '@mui/icons-material/OpenInNew';
+import ErrorOutlineIcon from '@mui/icons-material/ErrorOutline';
+import { getPresentationViewMode, setPresentationViewMode } from '../../services/settingsService';
 
 const PptViewer = ({ presentation, width = '100%', height = '600px' }) => {
   const [viewerUrl, setViewerUrl] = useState('');
+  const [directUrl, setDirectUrl] = useState('');
   const [isLocalFile, setIsLocalFile] = useState(false);
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(true);
+  const [viewMode, setViewMode] = useState(getPresentationViewMode()); // Load from settings
+  const [iframeError, setIframeError] = useState(false);
+  
+  // Handle iframe load error
+  const handleIframeError = () => {
+    setIframeError(true);
+    setLoading(false);
+  };
+
+  // Handle iframe load success
+  const handleIframeLoad = () => {
+    setLoading(false);
+    setIframeError(false);
+  };
+
+  // Handle tab change
+  const handleViewModeChange = (event, newValue) => {
+    setViewMode(newValue);
+    // Save preference to settings
+    setPresentationViewMode(newValue);
+  };
   
   useEffect(() => {
     if (!presentation) return;
+    
+    setLoading(true);
+    setIframeError(false);
     
     // Check if this is a local file or URL
     if (presentation.isLocal) {
       setIsLocalFile(true);
       // For local files, we use the local path directly
       // The file should be in the public folder
-      setViewerUrl(`${process.env.PUBLIC_URL}/${presentation.url}`);
+      const localPath = `${process.env.PUBLIC_URL}/${presentation.url}`;
+      setDirectUrl(localPath);
+      setViewerUrl(''); // No viewer for local files
+      setLoading(false);
     } else {
       setIsLocalFile(false);
       
@@ -51,6 +95,16 @@ const PptViewer = ({ presentation, width = '100%', height = '600px' }) => {
         }
       }
       
+      // Handle AWS S3 and other direct links
+      // Make sure URL ends with .ppt, .pptx, or other Office formats
+      const isOfficeFile = /\.(ppt|pptx|doc|docx|xls|xlsx)$/i.test(finalUrl);
+      if (!isOfficeFile) {
+        setError('The URL does not appear to be a valid Office document. Please check the URL format.');
+      }
+      
+      // Store the direct URL for download option
+      setDirectUrl(finalUrl);
+      
       // For online files, use Microsoft Office Online viewer
       const encodedUrl = encodeURIComponent(finalUrl);
       setViewerUrl(`https://view.officeapps.live.com/op/embed.aspx?src=${encodedUrl}`);
@@ -62,6 +116,9 @@ const PptViewer = ({ presentation, width = '100%', height = '600px' }) => {
       <Paper elevation={3} sx={{ p: 2, mb: 3 }}>
         <Typography variant="h6" gutterBottom>
           No presentation selected
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Please select a presentation from the list to view it.
         </Typography>
       </Paper>
     );
@@ -76,6 +133,12 @@ const PptViewer = ({ presentation, width = '100%', height = '600px' }) => {
         <Typography variant="body2" color="text.secondary" paragraph>
           {presentation.description}
         </Typography>
+      )}
+      
+      {error && (
+        <Alert severity="error" sx={{ mb: 2 }}>
+          {error}
+        </Alert>
       )}
       
       {isLocalFile ? (
@@ -94,8 +157,9 @@ const PptViewer = ({ presentation, width = '100%', height = '600px' }) => {
             </Typography>
             <Button 
               variant="contained" 
-              href={`/${presentation.url}`} 
+              href={directUrl} 
               target="_blank"
+              startIcon={<DownloadIcon />}
               sx={{ mb: 3 }}
             >
               Download Presentation
@@ -107,16 +171,167 @@ const PptViewer = ({ presentation, width = '100%', height = '600px' }) => {
           </Box>
         </Box>
       ) : (
-        <Box sx={{ width: '100%', height: height, overflow: 'hidden' }}>
-          <iframe
-            src={viewerUrl}
-            width={width}
-            height={height}
-            frameBorder="0"
-            title={presentation.title}
-            allowFullScreen
-          />
-        </Box>
+        <>
+          <Tabs 
+            value={viewMode} 
+            onChange={handleViewModeChange} 
+            sx={{ mb: 2, borderBottom: 1, borderColor: 'divider' }}
+          >
+            <Tab value="embed" label="Embedded Viewer" />
+            <Tab value="download" label="Download Options" />
+          </Tabs>
+          
+          {viewMode === 'embed' && (
+            <Box sx={{ width: '100%', height: height, overflow: 'hidden', position: 'relative' }}>
+              {loading && (
+                <Box sx={{ 
+                  position: 'absolute', 
+                  top: 0, 
+                  left: 0, 
+                  width: '100%', 
+                  height: '100%', 
+                  display: 'flex', 
+                  alignItems: 'center', 
+                  justifyContent: 'center',
+                  bgcolor: 'rgba(255, 255, 255, 0.8)',
+                  zIndex: 1
+                }}>
+                  <CircularProgress />
+                </Box>
+              )}
+              
+              {iframeError ? (
+                <Box sx={{ 
+                  width: '100%', 
+                  height: height, 
+                  display: 'flex', 
+                  flexDirection: 'column', 
+                  justifyContent: 'center', 
+                  alignItems: 'center', 
+                  bgcolor: '#f5f5f5',
+                  p: 4,
+                  borderRadius: 2
+                }}>
+                  <ErrorOutlineIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
+                  <Typography variant="h6" gutterBottom>
+                    Unable to load presentation
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary" paragraph>
+                    Microsoft Office Online viewer couldn't load this presentation. This may be due to:
+                  </Typography>
+                  <Box sx={{ width: '100%', mb: 3 }}>
+                    <Typography component="ul" variant="body2">
+                      <li>The presentation URL is not publicly accessible</li>
+                      <li>The file format is not supported</li>
+                      <li>CORS restrictions on the hosting server</li>
+                    </Typography>
+                  </Box>
+                  <Button 
+                    variant="contained" 
+                    onClick={() => setViewMode('download')}
+                  >
+                    Try Download Options
+                  </Button>
+                </Box>
+              ) : (
+                <iframe
+                  src={viewerUrl}
+                  width={width}
+                  height={height}
+                  frameBorder="0"
+                  title={presentation.title}
+                  allowFullScreen
+                  onLoad={handleIframeLoad}
+                  onError={handleIframeError}
+                />
+              )}
+            </Box>
+          )}
+          
+          {viewMode === 'download' && (
+            <Box sx={{ 
+              width: '100%', 
+              height: height, 
+              display: 'flex', 
+              flexDirection: 'column', 
+              p: 4, 
+              bgcolor: '#f5f5f5', 
+              borderRadius: 2 
+            }}>
+              <Typography variant="h6" gutterBottom>
+                Download Options
+              </Typography>
+              
+              <Divider sx={{ my: 2 }} />
+              
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  1. Direct Download
+                </Typography>
+                <Typography variant="body2" paragraph>
+                  Download the presentation file to your computer and open it with Microsoft PowerPoint or another compatible application.
+                </Typography>
+                <Button 
+                  variant="contained" 
+                  href={directUrl} 
+                  target="_blank"
+                  startIcon={<DownloadIcon />}
+                >
+                  Download Presentation
+                </Button>
+              </Box>
+              
+              <Box sx={{ mb: 4 }}>
+                <Typography variant="subtitle1" gutterBottom>
+                  2. Open in Browser (if supported)
+                </Typography>
+                <Typography variant="body2" paragraph>
+                  Try opening the presentation directly in your browser. This may work for some file types and hosting services.
+                </Typography>
+                <Button 
+                  variant="outlined" 
+                  href={directUrl} 
+                  target="_blank"
+                  startIcon={<OpenInNewIcon />}
+                >
+                  Open in Browser
+                </Button>
+              </Box>
+              
+              <Box>
+                <Typography variant="subtitle1" gutterBottom>
+                  3. Open with External Services
+                </Typography>
+                <Typography variant="body2" paragraph>
+                  Use these services to view the presentation online:
+                </Typography>
+                <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap' }}>
+                  <Button 
+                    variant="outlined" 
+                    href={`https://docs.google.com/viewer?url=${encodeURIComponent(directUrl)}`} 
+                    target="_blank"
+                  >
+                    Google Docs Viewer
+                  </Button>
+                  <Button 
+                    variant="outlined" 
+                    href={`https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(directUrl)}`} 
+                    target="_blank"
+                  >
+                    Office Online (New Tab)
+                  </Button>
+                </Box>
+              </Box>
+            </Box>
+          )}
+          
+          <Alert severity="info" sx={{ mt: 2 }}>
+            <Typography variant="body2">
+              Note: The PowerPoint viewer requires the presentation to be hosted at a publicly accessible URL.
+              For security reasons, Microsoft's Office Online viewer only works with presentations hosted on public servers.
+            </Typography>
+          </Alert>
+        </>
       )}
     </Paper>
   );

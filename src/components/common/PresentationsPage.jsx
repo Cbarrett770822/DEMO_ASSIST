@@ -6,7 +6,6 @@ import {
   Container, 
   Typography, 
   Box, 
-  Grid, 
   Card, 
   CardContent, 
   Alert, 
@@ -77,7 +76,7 @@ const PresentationsPage = () => {
           PowerPoint Presentations
         </Typography>
         
-        <Typography variant="body1" paragraph>
+        <Typography variant="body1" component="div">
           Browse and view presentations related to warehouse management processes.
         </Typography>
         
@@ -94,8 +93,8 @@ const PresentationsPage = () => {
         )}
       
       {!loading && !error && (
-        <Grid container spacing={4}>
-          <Grid item xs={12} md={4}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+          <Box sx={{ flex: { xs: '1 1 100%', md: '1 1 calc(33.333% - 16px)' }, minWidth: { xs: '100%', md: 'calc(33.333% - 16px)' } }}>
             <Card elevation={3}>
               <CardContent>
                 <Typography variant="h6" gutterBottom>
@@ -168,20 +167,20 @@ const PresentationsPage = () => {
             
             {isAdmin ? (
               <Alert severity="info" sx={{ mt: 3 }}>
-                <Typography variant="body2">
+                <Typography variant="body2" component="div">
                   To add or manage presentations, go to the <strong>Settings</strong> page.
                 </Typography>
               </Alert>
             ) : (
               <Alert severity="info" sx={{ mt: 3 }}>
-                <Typography variant="body2">
+                <Typography variant="body2" component="div">
                   Contact an administrator to add or manage presentations.
                 </Typography>
               </Alert>
             )}
-          </Grid>
+          </Box>
           
-          <Grid item xs={12} md={8}>
+          <Box sx={{ flex: { xs: '1 1 100%', md: '1 1 calc(66.667% - 16px)' }, minWidth: { xs: '100%', md: 'calc(66.667% - 16px)' } }}>
             {selectedPresentation ? (
               <PptViewer 
                 presentation={selectedPresentation} 
@@ -212,13 +211,13 @@ const PresentationsPage = () => {
             )}
             
             <Alert severity="info" sx={{ mt: 2 }}>
-              <Typography variant="body2">
+              <Typography variant="body2" component="div">
                 Note: The PowerPoint viewer requires the presentation to be hosted at a publicly accessible URL.
                 For security reasons, Microsoft's Office Online viewer only works with presentations hosted on public servers.
               </Typography>
             </Alert>
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
       )}
       </Box>
     </Container>

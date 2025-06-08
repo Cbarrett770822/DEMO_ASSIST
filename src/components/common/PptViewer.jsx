@@ -206,34 +206,29 @@ const PptViewer = ({ presentation, width = '100%', height = '600px' }) => {
                   height: height, 
                   display: 'flex', 
                   flexDirection: 'column', 
-                  justifyContent: 'center', 
-                  alignItems: 'center', 
+                  alignItems: 'center',
+                  justifyContent: 'center',
                   bgcolor: '#f5f5f5',
                   p: 4,
-                  borderRadius: 2
+                  borderRadius: 1
                 }}>
-                  <ErrorOutlineIcon sx={{ fontSize: 60, color: 'text.secondary', mb: 2 }} />
-                  <Typography variant="h6" gutterBottom>
-                    Unable to load presentation
+                  <ErrorOutlineIcon sx={{ fontSize: 60, color: 'error.main', mb: 2 }} />
+                  <Typography variant="h6" color="error" gutterBottom>
+                    Unable to load presentation viewer
                   </Typography>
-                  <Typography variant="body2" color="text.secondary" paragraph>
-                    Microsoft Office Online viewer couldn't load this presentation. This may be due to:
+                  <Typography variant="body2" align="center" sx={{ mb: 3 }}>
+                    The presentation viewer couldn't be loaded. This may be due to security restrictions, 
+                    unsupported file format, or the file not being publicly accessible.
                   </Typography>
-                  <Box sx={{ width: '100%', mb: 3 }}>
-                    <Typography component="ul" variant="body2">
-                      <li>The presentation URL is not publicly accessible</li>
-                      <li>The file format is not supported</li>
-                      <li>CORS restrictions on the hosting server</li>
-                    </Typography>
-                  </Box>
                   <Button 
                     variant="contained" 
+                    color="primary"
                     onClick={() => setViewMode('download')}
                   >
                     Try Download Options
                   </Button>
                 </Box>
-              ) : (
+              ) : viewerUrl ? (
                 <iframe
                   src={viewerUrl}
                   width={width}
@@ -244,6 +239,23 @@ const PptViewer = ({ presentation, width = '100%', height = '600px' }) => {
                   onLoad={handleIframeLoad}
                   onError={handleIframeError}
                 />
+              ) : (
+                <Box sx={{ 
+                  width: '100%', 
+                  height: height, 
+                  display: 'flex', 
+                  flexDirection: 'column',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  bgcolor: '#f5f5f5',
+                  p: 4,
+                  borderRadius: 1
+                }}>
+                  <CircularProgress sx={{ mb: 2 }} />
+                  <Typography variant="body1">
+                    Preparing presentation viewer...
+                  </Typography>
+                </Box>
               )}
             </Box>
           )}

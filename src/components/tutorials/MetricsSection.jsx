@@ -31,7 +31,7 @@ const MetricsSection = () => {
         </Typography>
       </Box>
       
-      <Typography variant="body1" paragraph>
+      <Typography variant="body1" component="div" sx={{ mb: 2 }}>
         Monitor these metrics to measure the effectiveness of your {process.title.toLowerCase()} process after implementing a WMS.
       </Typography>
       

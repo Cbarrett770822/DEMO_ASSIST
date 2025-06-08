@@ -4,7 +4,6 @@ import {
   Container,
   Typography,
   Paper,
-  Grid,
   Divider,
   List,
   ListItem,
@@ -23,13 +22,13 @@ const AboutPage = () => {
         <Typography variant="h4" component="h1" gutterBottom align="center">
           About Warehouse Management Systems
         </Typography>
-        <Typography variant="body1" paragraph align="center">
+        <Typography variant="body1" component="div" align="center">
           Your comprehensive resource for learning about Warehouse Management Systems and optimizing warehouse processes.
         </Typography>
       </Box>
 
-      <Grid container spacing={4}>
-        <Grid item xs={12} md={6}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+        <Box sx={{ flex: { xs: '1 1 100%', md: '1 1 calc(50% - 16px)' }, minWidth: { xs: '100%', md: 'calc(50% - 16px)' } }}>
           <Paper elevation={3} sx={{ p: 3, height: '100%' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
               <InfoIcon color="primary" sx={{ mr: 1 }} />
@@ -37,19 +36,19 @@ const AboutPage = () => {
                 Our Mission
               </Typography>
             </Box>
-            <Typography variant="body1" paragraph>
+            <Typography variant="body1" component="div" sx={{ mb: 2 }}>
               This application is dedicated to helping warehouse professionals understand and implement 
               Warehouse Management Systems to optimize their operations. Our mission is to provide clear, 
               practical Flow that demonstrate how WMS technology can transform warehouse processes.
             </Typography>
-            <Typography variant="body1" paragraph>
+            <Typography variant="body1" component="div">
               We believe that proper warehouse management is critical for supply chain efficiency, and our 
               goal is to make WMS knowledge accessible to everyone in the industry.
             </Typography>
           </Paper>
-        </Grid>
+        </Box>
 
-        <Grid item xs={12} md={6}>
+        <Box sx={{ flex: { xs: '1 1 100%', md: '1 1 calc(50% - 16px)' }, minWidth: { xs: '100%', md: 'calc(50% - 16px)' } }}>
           <Paper elevation={3} sx={{ p: 3, height: '100%' }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
               <SchoolIcon color="primary" sx={{ mr: 1 }} />
@@ -57,12 +56,12 @@ const AboutPage = () => {
                 Educational Approach
               </Typography>
             </Box>
-            <Typography variant="body1" paragraph>
+            <Typography variant="body1" component="div" sx={{ mb: 2 }}>
               Our Flow are designed with a practical, hands-on approach to learning. Each warehouse process 
               is broken down into clear steps, with video demonstrations showing exactly how a WMS can be used 
               to improve efficiency and accuracy.
             </Typography>
-            <Typography variant="body1">
+            <Typography variant="body1" component="div">
               Key components of our educational approach include:
             </Typography>
             <List>
@@ -92,9 +91,9 @@ const AboutPage = () => {
               </ListItem>
             </List>
           </Paper>
-        </Grid>
+        </Box>
 
-        <Grid item xs={12}>
+        <Box sx={{ flex: '1 1 100%', width: '100%' }}>
           <Paper elevation={3} sx={{ p: 3 }}>
             <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
               <BusinessIcon color="primary" sx={{ mr: 1 }} />
@@ -102,7 +101,7 @@ const AboutPage = () => {
                 About Warehouse Management Systems
               </Typography>
             </Box>
-            <Typography variant="body1" paragraph>
+            <Typography variant="body1" component="div" sx={{ mb: 2 }}>
               A Warehouse Management System (WMS) is specialized software that helps organizations control and 
               manage day-to-day warehouse operations, from the moment goods enter a warehouse until they leave. 
               A WMS manages and optimizes all warehouse processes including receiving, putaway, inventory management, 
@@ -114,8 +113,8 @@ const AboutPage = () => {
             <Typography variant="h6" gutterBottom>
               Key Benefits of Implementing a WMS:
             </Typography>
-            <Grid container spacing={2}>
-              <Grid item xs={12} sm={6}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+              <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)' }, minWidth: { xs: '100%', sm: 'calc(50% - 8px)' } }}>
                 <List dense>
                   <ListItem>
                     <ListItemIcon>
@@ -123,7 +122,7 @@ const AboutPage = () => {
                     </ListItemIcon>
                     <ListItemText 
                       primary="Increased Inventory Accuracy" 
-                      secondary="Achieve over 99% inventory accuracy with real-time tracking" 
+                      secondary={<Typography component="span" variant="body2">Achieve over 99% inventory accuracy with real-time tracking</Typography>} 
                     />
                   </ListItem>
                   <ListItem>
@@ -132,7 +131,7 @@ const AboutPage = () => {
                     </ListItemIcon>
                     <ListItemText 
                       primary="Improved Labor Productivity" 
-                      secondary="Boost warehouse productivity by up to 50% through optimized workflows" 
+                      secondary={<Typography component="span" variant="body2">Boost warehouse productivity by up to 50% through optimized workflows</Typography>} 
                     />
                   </ListItem>
                   <ListItem>
@@ -141,12 +140,12 @@ const AboutPage = () => {
                     </ListItemIcon>
                     <ListItemText 
                       primary="Enhanced Order Accuracy" 
-                      secondary="Achieve over 99.9% order accuracy with barcode verification" 
+                      secondary={<Typography component="span" variant="body2">Achieve over 99.9% order accuracy with barcode verification</Typography>} 
                     />
                   </ListItem>
                 </List>
-              </Grid>
-              <Grid item xs={12} sm={6}>
+              </Box>
+              <Box sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 8px)' }, minWidth: { xs: '100%', sm: 'calc(50% - 8px)' } }}>
                 <List dense>
                   <ListItem>
                     <ListItemIcon>
@@ -154,7 +153,7 @@ const AboutPage = () => {
                     </ListItemIcon>
                     <ListItemText 
                       primary="Reduced Operating Costs" 
-                      secondary="Cut labor costs by 10-20% through efficiency improvements" 
+                      secondary={<Typography component="span" variant="body2">Cut labor costs by 10-20% through efficiency improvements</Typography>} 
                     />
                   </ListItem>
                   <ListItem>
@@ -163,7 +162,7 @@ const AboutPage = () => {
                     </ListItemIcon>
                     <ListItemText 
                       primary="Optimized Space Utilization" 
-                      secondary="Improve warehouse space utilization by up to 30%" 
+                      secondary={<Typography component="span" variant="body2">Improve warehouse space utilization by up to 30%</Typography>} 
                     />
                   </ListItem>
                   <ListItem>
@@ -172,15 +171,15 @@ const AboutPage = () => {
                     </ListItemIcon>
                     <ListItemText 
                       primary="Better Customer Satisfaction" 
-                      secondary="Improve on-time, in-full delivery rates to over 98%" 
+                      secondary={<Typography component="span" variant="body2">Improve on-time, in-full delivery rates to over 98%</Typography>} 
                     />
                   </ListItem>
                 </List>
-              </Grid>
-            </Grid>
+              </Box>
+            </Box>
           </Paper>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
     </Container>
   );
 };

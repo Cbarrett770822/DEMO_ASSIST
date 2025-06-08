@@ -9,7 +9,6 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
-  Grid,
   TextField,
   Button,
   IconButton,
@@ -183,8 +182,8 @@ const EditableBenefitsSection = () => {
         </Button>
       </Box>
       
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+        <Box sx={{ flex: '1 1 calc(50% - 12px)', minWidth: { xs: '100%', md: 'calc(50% - 12px)' } }}>
           <Paper elevation={3} sx={{ p: 3, height: '100%' }}>
             <Typography variant="h6" gutterBottom color="primary">
               Key Benefits
@@ -255,9 +254,9 @@ const EditableBenefitsSection = () => {
               </Button>
             </Box>
           </Paper>
-        </Grid>
+        </Box>
         
-        <Grid item xs={12} md={6}>
+        <Box sx={{ flex: '1 1 calc(50% - 12px)', minWidth: { xs: '100%', md: 'calc(50% - 12px)' } }}>
           <Paper elevation={3} sx={{ p: 3, height: '100%' }}>
             <Typography variant="h6" gutterBottom color="primary">
               Before & After WMS Implementation
@@ -351,8 +350,8 @@ const EditableBenefitsSection = () => {
             
             <Divider sx={{ mb: 2 }} />
             
-            <Grid container spacing={2}>
-              <Grid item xs={6}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2 }}>
+              <Box sx={{ flex: '1 1 calc(50% - 8px)', minWidth: { xs: 'calc(50% - 8px)' } }}>
                 <TextField
                   fullWidth
                   label="Before WMS"
@@ -361,8 +360,8 @@ const EditableBenefitsSection = () => {
                   size="small"
                   variant="outlined"
                 />
-              </Grid>
-              <Grid item xs={6}>
+              </Box>
+              <Box sx={{ flex: '1 1 calc(50% - 8px)', minWidth: { xs: 'calc(50% - 8px)' } }}>
                 <TextField
                   fullWidth
                   label="After WMS"
@@ -371,8 +370,8 @@ const EditableBenefitsSection = () => {
                   size="small"
                   variant="outlined"
                 />
-              </Grid>
-              <Grid item xs={12}>
+              </Box>
+              <Box sx={{ width: '100%' }}>
                 <Button
                   fullWidth
                   variant="contained"
@@ -382,11 +381,11 @@ const EditableBenefitsSection = () => {
                 >
                   Add Before/After Comparison
                 </Button>
-              </Grid>
-            </Grid>
+              </Box>
+            </Box>
           </Paper>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
       
       <Snackbar
         open={snackbarOpen}

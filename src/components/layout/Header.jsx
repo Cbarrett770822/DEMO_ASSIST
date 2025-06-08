@@ -34,6 +34,7 @@ import LogoutIcon from '@mui/icons-material/Logout';
 import AccountCircleIcon from '@mui/icons-material/AccountCircle';
 import PeopleIcon from '@mui/icons-material/People';
 import ArrowDropDownIcon from '@mui/icons-material/ArrowDropDown';
+import BuildIcon from '@mui/icons-material/Build';
 import { selectCurrentUser, selectIsSupervisor, selectIsAdmin } from '../../features/auth/authSlice';
 
 const Header = ({ onLogout }) => {
@@ -71,8 +72,9 @@ const Header = ({ onLogout }) => {
     { text: 'Process Flows', path: '/processes', icon: <AccountTreeIcon /> }
   ];
   
-  // Add Settings link for admins only
+  // Add Admin Tools and Settings links for admins only
   if (isAdmin) {
+    menuItems.push({ text: 'Admin Tools', path: '/admin/tools', icon: <BuildIcon /> });
     menuItems.push({ text: 'Settings', path: '/settings', icon: <SettingsIcon /> });
   }
   
@@ -95,7 +97,7 @@ const Header = ({ onLogout }) => {
       <List>
         {menuItems.map((item) => (
           <ListItem 
-            button 
+            button
             key={item.text} 
             component={RouterLink} 
             to={item.path}
@@ -123,7 +125,7 @@ const Header = ({ onLogout }) => {
         
         {/* Logout button in drawer */}
         <ListItem 
-          button 
+          button={true} 
           onClick={() => {
             toggleDrawer();
             if (onLogout) onLogout();
@@ -242,6 +244,30 @@ const Header = ({ onLogout }) => {
                 </ListItemIcon>
                 <ListItemText>My Profile</ListItemText>
               </MenuItem>
+              {isAdmin && [
+                <MenuItem 
+                  key="admin-tools"
+                  component={RouterLink} 
+                  to="/admin/tools"
+                  onClick={handleCloseUserMenu}
+                >
+                  <ListItemIcon>
+                    <BuildIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>Admin Tools</ListItemText>
+                </MenuItem>,
+                <MenuItem 
+                  key="api-diagnostics"
+                  component={RouterLink} 
+                  to="/debug/api"
+                  onClick={handleCloseUserMenu}
+                >
+                  <ListItemIcon>
+                    <BuildIcon fontSize="small" />
+                  </ListItemIcon>
+                  <ListItemText>API Diagnostics</ListItemText>
+                </MenuItem>
+              ]}
               <Divider />
               <MenuItem onClick={handleLogout}>
                 <ListItemIcon>

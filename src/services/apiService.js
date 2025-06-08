@@ -1,58 +1,29 @@
 // API service for making requests to the Netlify functions
+import config from '../config';
 
-// Development mode - set to true to use mock data instead of API calls
-const DEV_MODE = true;
+// Auto-detect development mode based on environment or hostname
+const isDevelopment = process.env.NODE_ENV === 'development' || 
+  !process.env.NODE_ENV || 
+  window.location.hostname === 'localhost' || 
+  window.location.hostname === '127.0.0.1';
 
-// Mock data for development mode
-const MOCK_PRESENTATIONS = [
-  {
-    id: '1',
-    title: 'WMS Introduction',
-    url: 'https://wms-presentations.s3.amazonaws.com/wms-introduction.pptx',
-    description: 'An introduction to Warehouse Management Systems and their benefits',
-    isLocal: false,
-    fileType: 'pptx',
-    sourceType: 's3',
-    viewerUrl: 'https://view.officeapps.live.com/op/embed.aspx?src=https://wms-presentations.s3.amazonaws.com/wms-introduction.pptx',
-    directUrl: 'https://wms-presentations.s3.amazonaws.com/wms-introduction.pptx'
-  },
-  {
-    id: '2',
-    title: 'Inbound Processes',
-    url: 'https://wms-presentations.s3.amazonaws.com/inbound-processes.pptx',
-    description: 'Detailed overview of receiving and putaway processes',
-    isLocal: false,
-    fileType: 'pptx',
-    sourceType: 's3',
-    viewerUrl: 'https://view.officeapps.live.com/op/embed.aspx?src=https://wms-presentations.s3.amazonaws.com/inbound-processes.pptx',
-    directUrl: 'https://wms-presentations.s3.amazonaws.com/inbound-processes.pptx'
-  },
-  {
-    id: '3',
-    title: 'Outbound Processes',
-    url: 'https://wms-presentations.s3.amazonaws.com/outbound-processes.pptx',
-    description: 'Detailed overview of picking, packing, and shipping processes',
-    isLocal: false,
-    fileType: 'pptx',
-    sourceType: 's3',
-    viewerUrl: 'https://view.officeapps.live.com/op/embed.aspx?src=https://wms-presentations.s3.amazonaws.com/outbound-processes.pptx',
-    directUrl: 'https://wms-presentations.s3.amazonaws.com/outbound-processes.pptx'
-  },
-  {
-    id: '4',
-    title: 'Inventory Management',
-    url: 'https://docs.google.com/presentation/d/1XYZ123456/edit?usp=sharing',
-    description: 'Overview of inventory management techniques and best practices',
-    isLocal: false,
-    fileType: 'gslides',
-    sourceType: 'gslides',
-    viewerUrl: 'https://docs.google.com/presentation/d/1XYZ123456/embed',
-    directUrl: 'https://docs.google.com/presentation/d/1XYZ123456/export/pptx'
-  }
-];
+// Database API endpoints
+const API_ENDPOINTS = {
+  PRESENTATIONS: `${config.apiUrl}/getPresentations`,
+  SAVE_PRESENTATIONS: `${config.apiUrl}/savePresentations`,
+  PROCESSES: `${config.apiUrl}/getProcesses`,
+  SAVE_PROCESSES: `${config.apiUrl}/saveProcesses`,
+  SETTINGS: `${config.apiUrl}/getSettings`,
+  SAVE_SETTINGS: `${config.apiUrl}/saveSettings`,
+  NOTES: `${config.apiUrl}/getNotes`,
+  SAVE_NOTES: `${config.apiUrl}/saveNotes`
+};
 
-// Load presentations from localStorage or use mock data
-const loadMockPresentations = () => {
+// Empty fallback data (no more mock data)
+const EMPTY_PRESENTATIONS = [];
+
+// Load presentations from localStorage (only as a cache, not as primary source)
+const loadCachedPresentations = () => {
   const storedPresentations = localStorage.getItem('wms_presentations');
   if (storedPresentations) {
     try {
@@ -61,58 +32,72 @@ const loadMockPresentations = () => {
       console.error('Error parsing stored presentations:', error);
     }
   }
-  return MOCK_PRESENTATIONS;
+  return EMPTY_PRESENTATIONS;
 };
 
-// Save presentations to localStorage
-const saveMockPresentations = (presentations) => {
+// Save presentations to localStorage as a cache
+const cachePresentations = (presentations) => {
   localStorage.setItem('wms_presentations', JSON.stringify(presentations));
   return presentations;
 };
 
-// Get all presentations
+// Get all presentations from database
 export const fetchPresentations = async () => {
-  // In development mode, use mock data
-  if (DEV_MODE) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const presentations = loadMockPresentations();
-        resolve({ presentations });
-      }, 300); // Simulate network delay
-    });
-  }
+  // Load cached data for immediate display while we fetch from database
+  const cachedPresentations = loadCachedPresentations();
   
-  // In production mode, use API
+  // Always try to fetch from database, regardless of development mode
   try {
-    const response = await fetch('/api/getPresentations');
+    console.log('Fetching presentations from database...');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    
+    const response = await fetch(API_ENDPOINTS.PRESENTATIONS, {
+      signal: controller.signal,
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    });
+    
+    clearTimeout(timeoutId);
+    
     if (!response.ok) {
-      throw new Error('Failed to fetch presentations');
+      throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
     }
-    return await response.json();
+    
+    const data = await response.json();
+    console.log('Successfully fetched presentations from API');
+    
+    // If we got empty data from the API, return empty array
+    if (!data.presentations || data.presentations.length === 0) {
+      console.log('Database returned empty presentations');
+      return { presentations: [], source: 'database' };
+    }
+    
+    // Cache the database data to localStorage for faster loading next time
+    cachePresentations(data.presentations);
+    return data;
   } catch (error) {
-    console.error('Error fetching presentations:', error);
-    // Fall back to default presentations if API fails
+    console.error('Error fetching presentations from API:', error);
+    // If database fetch fails, use cached data but indicate the error
     return { 
-      presentations: MOCK_PRESENTATIONS
+      presentations: cachedPresentations,
+      source: 'cache',
+      error: error.message
     };
   }
 };
 
-// Save presentations
+// Save presentations to database
 export const savePresentationsToApi = async (presentations) => {
-  // In development mode, use mock data
-  if (DEV_MODE) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        const savedPresentations = saveMockPresentations(presentations);
-        resolve({ success: true, presentations: savedPresentations });
-      }, 300); // Simulate network delay
-    });
-  }
-  
-  // In production mode, use API
+  // Always save to database, regardless of development mode
   try {
-    const response = await fetch('/api/savePresentations', {
+  
+    // Cache the data locally while we save to database
+    cachePresentations(presentations);
+    
+    const response = await fetch(API_ENDPOINTS.SAVE_PRESENTATIONS, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -133,64 +118,67 @@ export const savePresentationsToApi = async (presentations) => {
 
 // Get all processes
 export const fetchProcesses = async () => {
-  // In development mode, use mock data
-  if (DEV_MODE) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        // Try to get from localStorage first
-        const storedProcesses = localStorage.getItem('wms_processes');
-        if (storedProcesses) {
-          try {
-            resolve(JSON.parse(storedProcesses));
-            return;
-          } catch (error) {
-            console.error('Error parsing stored processes:', error);
-          }
-        }
-        
-        // If nothing in localStorage, import the default data
-        const processData = require('../features/processes/data/processData');
-        resolve(processData);
-      }, 300); // Simulate network delay
-    });
+  // Load cached data for immediate display while we fetch from database
+  let cachedProcesses = [];
+  const storedProcesses = localStorage.getItem('wms_processes');
+  if (storedProcesses) {
+    try {
+      cachedProcesses = JSON.parse(storedProcesses);
+    } catch (error) {
+      console.error('Error parsing stored processes:', error);
+    }
   }
   
-  // In production mode, use API
+  // Always try to fetch from database
   try {
-    const response = await fetch('/api/getProcesses');
+    console.log('Fetching processes from database...');
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 5000); // 5 second timeout
+    
+    const response = await fetch(API_ENDPOINTS.PROCESSES, {
+      signal: controller.signal,
+      headers: {
+        'Cache-Control': 'no-cache',
+        'Pragma': 'no-cache'
+      }
+    });
+    
+    clearTimeout(timeoutId);
+    
     if (!response.ok) {
-      throw new Error('Failed to fetch processes');
-    }
-    return await response.json();
-  } catch (error) {
-    console.error('Error fetching processes:', error);
-    // Fall back to localStorage if API fails
-    const storedProcesses = localStorage.getItem('wms_processes');
-    if (storedProcesses) {
-      return JSON.parse(storedProcesses);
+      throw new Error(`Server responded with ${response.status}: ${response.statusText}`);
     }
     
-    // If nothing in localStorage, import the default data
-    const processData = require('../features/processes/data/processData');
-    return processData;
+    const data = await response.json();
+    console.log('Successfully fetched processes from database');
+    
+    // If we got empty data from the API, return empty array
+    if (!data.processes || data.processes.length === 0) {
+      console.log('Database returned empty processes');
+      return { processes: [], source: 'database' };
+    }
+    
+    // Cache the database data to localStorage for faster loading next time
+    localStorage.setItem('wms_processes', JSON.stringify(data.processes));
+    return data;
+  } catch (error) {
+    console.error('Error fetching processes from database:', error);
+    // If database fetch fails, use cached data but indicate the error
+    return { 
+      processes: cachedProcesses,
+      source: 'cache',
+      error: error.message
+    };
   }
 };
 
 // Save processes
 export const saveProcessesToApi = async (processes) => {
-  // In development mode, use mock data
-  if (DEV_MODE) {
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        localStorage.setItem('wms_processes', JSON.stringify(processes));
-        resolve({ success: true, processes });
-      }, 300); // Simulate network delay
-    });
-  }
-  
-  // In production mode, use API
+  // Always save to database
   try {
-    const response = await fetch('/api/saveProcesses', {
+    // Cache the data locally while we save to database
+    localStorage.setItem('wms_processes', JSON.stringify(processes));
+    const response = await fetch(API_ENDPOINTS.SAVE_PROCESSES, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

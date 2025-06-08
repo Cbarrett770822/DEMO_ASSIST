@@ -6,6 +6,11 @@ const PresentationSchema = new mongoose.Schema({
     required: true,
     unique: true
   },
+  userId: {
+    type: String,
+    required: true,
+    index: true // Add index for faster queries by userId
+  },
   title: {
     type: String,
     required: true,

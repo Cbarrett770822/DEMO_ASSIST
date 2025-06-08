@@ -10,7 +10,6 @@ import {
   ListItemText,
   Button,
   Divider,
-  Grid,
   Card,
   CardContent,
   CardActions
@@ -225,9 +224,9 @@ const DownloadResources = () => {
         Download these resources to help implement and optimize the {process.title.toLowerCase()} process in your warehouse.
       </Typography>
       
-      <Grid container spacing={3}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
         {processResources.map((resource, index) => (
-          <Grid item xs={12} md={4} key={index}>
+          <Box key={index} sx={{ flex: { xs: '1 1 100%', md: '1 1 calc(33.333% - 16px)' }, minWidth: { xs: '100%', md: 'calc(33.333% - 16px)' } }}>
             <Card elevation={2} sx={{ height: '100%', display: 'flex', flexDirection: 'column' }}>
               <CardContent sx={{ flexGrow: 1 }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', mb: 2 }}>
@@ -251,9 +250,9 @@ const DownloadResources = () => {
                 </Button>
               </CardActions>
             </Card>
-          </Grid>
+          </Box>
         ))}
-      </Grid>
+      </Box>
       
       <Box sx={{ mt: 3, p: 2, bgcolor: 'primary.light', borderRadius: 1 }}>
         <Typography variant="body2" color="white">

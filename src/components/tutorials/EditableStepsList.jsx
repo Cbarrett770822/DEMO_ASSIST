@@ -186,7 +186,7 @@ const EditableStepsList = () => {
             >
               <ListItemText
                 primary={`Step ${index + 1}: ${step.title}`}
-                secondary={step.description || 'No description provided'}
+                secondary={<Typography component="span" variant="body2">{step.description || 'No description provided'}</Typography>}
               />
             </ListItem>
           ))}

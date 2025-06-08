@@ -38,17 +38,57 @@ const LoginPage = () => {
     dispatch(clearError());
   }, [dispatch]);
   
+  const [formErrors, setFormErrors] = useState({});
+
+  const validateForm = () => {
+    const errors = {};
+    
+    if (!username.trim()) {
+      errors.username = 'Username is required';
+    }
+    
+    if (!password.trim()) {
+      errors.password = 'Password is required';
+    }
+    
+    setFormErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
+  
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    if (!username || !password) {
+    // Clear previous errors
+    setFormErrors({});
+    
+    // Validate form
+    if (!validateForm()) {
       return;
     }
     
     setIsSubmitting(true);
     
     try {
-      await dispatch(login(username, password));
+      // Dispatch login action
+      const result = await dispatch(login(username, password));
+      console.log('Login result:', result);
+      
+      // Handle login result
+      if (!result.success) {
+        // If there's a specific error message, display it
+        if (result.error) {
+          setFormErrors(prev => ({
+            ...prev,
+            general: result.error
+          }));
+        }
+      }
+    } catch (error) {
+      console.error('Login error:', error);
+      setFormErrors(prev => ({
+        ...prev,
+        general: 'An unexpected error occurred. Please try again.'
+      }));
     } finally {
       setIsSubmitting(false);
     }
@@ -92,9 +132,9 @@ const LoginPage = () => {
             Sign in
           </Typography>
           
-          {error && (
+          {(error || formErrors.general) && (
             <Alert severity="error" sx={{ width: '100%', mb: 2 }}>
-              {error}
+              {error || formErrors.general}
             </Alert>
           )}
           
@@ -111,6 +151,8 @@ const LoginPage = () => {
               value={username}
               onChange={(e) => setUsername(e.target.value)}
               disabled={isSubmitting}
+              error={!!formErrors.username}
+              helperText={formErrors.username}
             />
             <TextField
               margin="normal"
@@ -124,6 +166,8 @@ const LoginPage = () => {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isSubmitting}
+              error={!!formErrors.password}
+              helperText={formErrors.password}
             />
             <Button
               type="submit"

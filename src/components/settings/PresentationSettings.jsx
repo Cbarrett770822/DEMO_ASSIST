@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import {
   Box,
   Typography,
@@ -22,60 +23,47 @@ import {
   DialogTitle,
   DialogContent,
   DialogContentText,
-  DialogActions
+  DialogActions,
+  CircularProgress
 } from '@mui/material';
 import SlideshowIcon from '@mui/icons-material/Slideshow';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
 import SaveIcon from '@mui/icons-material/Save';
-import { loadPresentations, savePresentations } from '../../services/storageService';
+import { 
+  fetchPresentations, 
+  selectPresentations, 
+  selectPresentationsStatus, 
+  selectPresentationsError,
+  addPresentation,
+  updatePresentation,
+  deletePresentation
+} from '../../features/presentations/presentationsSlice';
 
-const PresentationSettings = () => {
-  // Default presentations if none are stored
-  const defaultPresentations = [
-    {
-      id: 1,
-      title: 'WMS Introduction',
-      url: 'https://wms-presentations.s3.amazonaws.com/wms-introduction.pptx',
-      description: 'An introduction to Warehouse Management Systems and their benefits',
-      isLocal: false
-    },
-    {
-      id: 2,
-      title: 'Inbound Processes',
-      url: 'https://wms-presentations.s3.amazonaws.com/inbound-processes.pptx',
-      description: 'Detailed overview of receiving and putaway processes',
-      isLocal: false
-    }
-  ];
-  
-  const [presentations, setPresentations] = useState([]);
+const PresentationSettings = ({ showNotification }) => {
+  const dispatch = useDispatch();
+  const presentations = useSelector(selectPresentations);
+  const status = useSelector(selectPresentationsStatus);
+  const error = useSelector(selectPresentationsError);
   const [presentationSource, setPresentationSource] = useState('online');
   const [newPresentationTitle, setNewPresentationTitle] = useState('');
   const [newPresentationUrl, setNewPresentationUrl] = useState('');
   const [newPresentationDescription, setNewPresentationDescription] = useState('');
   const [localFilePath, setLocalFilePath] = useState('');
-  const [openSnackbar, setOpenSnackbar] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+  // Using parent component's notification system via showNotification prop
   const [editMode, setEditMode] = useState(false);
   const [editingPresentationId, setEditingPresentationId] = useState(null);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [presentationToDelete, setPresentationToDelete] = useState(null);
   const fileInputRef = useRef(null);
   
-  // Load presentations from localStorage on component mount
+  // Fetch presentations from API on component mount
   useEffect(() => {
-    const storedPresentations = loadPresentations();
-    if (storedPresentations && storedPresentations.length > 0) {
-      setPresentations(storedPresentations);
-    } else {
-      setPresentations(defaultPresentations);
-      // Save default presentations to localStorage
-      savePresentations(defaultPresentations);
+    if (status === 'idle') {
+      dispatch(fetchPresentations());
     }
-  }, []);
+  }, [status, dispatch]);
   
   const handlePresentationSourceChange = (event) => {
     setPresentationSource(event.target.value);
@@ -89,9 +77,7 @@ const PresentationSettings = () => {
       const file = event.target.files[0];
       // Check if it's a PowerPoint file
       if (!file.name.match(/\.(ppt|pptx)$/i)) {
-        setSnackbarMessage('Please select a PowerPoint file (.ppt or .pptx)');
-        setSnackbarSeverity('error');
-        setOpenSnackbar(true);
+        showNotification('Please select a PowerPoint file (.ppt or .pptx)', 'error');
         return;
       }
       
@@ -102,9 +88,7 @@ const PresentationSettings = () => {
       const filePath = 'presentations/' + file.name;
       setLocalFilePath(filePath);
       
-      setSnackbarMessage('Local file selected: ' + file.name + '. Make sure this file exists in the public/presentations folder.');
-      setSnackbarSeverity('info');
-      setOpenSnackbar(true);
+      showNotification('Local file selected: ' + file.name + '. Make sure this file exists in the public/presentations folder.', 'info');
     }
   };
   
@@ -115,16 +99,12 @@ const PresentationSettings = () => {
   const handleAddPresentation = () => {
     // Validate inputs
     if (!newPresentationTitle) {
-      setSnackbarMessage('Please provide a title for the presentation');
-      setSnackbarSeverity('error');
-      setOpenSnackbar(true);
+      showNotification('Please provide a title for the presentation', 'error');
       return;
     }
     
     if (presentationSource === 'online' && !newPresentationUrl) {
-      setSnackbarMessage('Please enter a URL for the presentation');
-      setSnackbarSeverity('error');
-      setOpenSnackbar(true);
+      showNotification('Please enter a URL for the presentation', 'error');
       return;
     }
     
@@ -135,64 +115,55 @@ const PresentationSettings = () => {
                               newPresentationUrl.includes('onedrive.live.com');
     
     if (presentationSource === 'online' && !isCloudStorageLink && !newPresentationUrl.match(/^https?:\/\/.+\.(ppt|pptx)$/i)) {
-      setSnackbarMessage('Please enter a valid PowerPoint URL (.ppt or .pptx) or a cloud storage link');
-      setSnackbarSeverity('error');
-      setOpenSnackbar(true);
+      showNotification('Please enter a valid PowerPoint URL (.ppt or .pptx) or a cloud storage link', 'error');
       return;
     }
     
     if (presentationSource === 'local' && !localFilePath) {
-      setSnackbarMessage('Please select a local PowerPoint file');
-      setSnackbarSeverity('error');
-      setOpenSnackbar(true);
+      showNotification('Please select a local PowerPoint file', 'error');
       return;
     }
     
+    // Create new presentation object
     const newPresentation = {
       id: editMode ? editingPresentationId : Date.now(),
       title: newPresentationTitle,
       url: presentationSource === 'online' ? newPresentationUrl : localFilePath,
-      description: newPresentationDescription || 'No description provided',
+      description: newPresentationDescription,
       isLocal: presentationSource === 'local'
     };
     
-    let updatedPresentations;
-    
+    // Add to presentations array or update existing using Redux
     if (editMode) {
-      // Update existing presentation
-      updatedPresentations = presentations.map(p => 
-        p.id === editingPresentationId ? newPresentation : p
-      );
-      setSnackbarMessage('Presentation updated successfully');
+      dispatch(updatePresentation({
+        id: editingPresentationId,
+        changes: {
+          title: newPresentationTitle,
+          url: presentationSource === 'online' ? newPresentationUrl : localFilePath,
+          description: newPresentationDescription,
+          isLocal: presentationSource === 'local'
+        }
+      }));
+      showNotification(`Presentation "${newPresentationTitle}" updated successfully`, 'success');
     } else {
-      // Add new presentation
-      updatedPresentations = [...presentations, newPresentation];
-      setSnackbarMessage('Presentation added successfully');
+      dispatch(addPresentation(newPresentation));
+      showNotification(`Presentation "${newPresentationTitle}" added successfully`, 'success');
     }
-    
-    // Update state and save to localStorage
-    setPresentations(updatedPresentations);
-    savePresentations(updatedPresentations);
     
     // Reset form
     setNewPresentationTitle('');
     setNewPresentationUrl('');
     setNewPresentationDescription('');
     setLocalFilePath('');
-    setPresentationSource('online');
     setEditMode(false);
     setEditingPresentationId(null);
-    
-    // Show success message
-    setSnackbarSeverity('success');
-    setOpenSnackbar(true);
   };
   
   const handleEditPresentation = (presentation) => {
     setEditMode(true);
     setEditingPresentationId(presentation.id);
     setNewPresentationTitle(presentation.title);
-    setNewPresentationDescription(presentation.description);
+    setNewPresentationDescription(presentation.description || '');
     
     if (presentation.isLocal) {
       setPresentationSource('local');
@@ -203,6 +174,8 @@ const PresentationSettings = () => {
       setNewPresentationUrl(presentation.url);
       setLocalFilePath('');
     }
+    
+    showNotification(`Editing presentation "${presentation.title}"`, 'info');
   };
   
   const handleDeleteClick = (presentation) => {
@@ -212,17 +185,21 @@ const PresentationSettings = () => {
   
   const handleDeleteConfirm = () => {
     if (presentationToDelete) {
-      const updatedPresentations = presentations.filter(p => p.id !== presentationToDelete.id);
-      setPresentations(updatedPresentations);
-      savePresentations(updatedPresentations);
+      dispatch(deletePresentation(presentationToDelete.id));
+      showNotification(`Presentation "${presentationToDelete.title}" deleted successfully`, 'success');
+      setDeleteDialogOpen(false);
+      setPresentationToDelete(null);
       
-      setSnackbarMessage('Presentation deleted successfully');
-      setSnackbarSeverity('success');
-      setOpenSnackbar(true);
+      // If we were editing this presentation, reset the form
+      if (editMode && editingPresentationId === presentationToDelete.id) {
+        setNewPresentationTitle('');
+        setNewPresentationUrl('');
+        setNewPresentationDescription('');
+        setLocalFilePath('');
+        setEditMode(false);
+        setEditingPresentationId(null);
+      }
     }
-    
-    setDeleteDialogOpen(false);
-    setPresentationToDelete(null);
   };
   
   const handleCancelEdit = () => {
@@ -235,9 +212,7 @@ const PresentationSettings = () => {
     setPresentationSource('online');
   };
   
-  const handleSnackbarClose = () => {
-    setOpenSnackbar(false);
-  };
+  // Using parent component's notification system
   
   return (
     <Paper elevation={3} sx={{ p: 3, mb: 4 }}>
@@ -250,25 +225,44 @@ const PresentationSettings = () => {
       
       <Divider sx={{ my: 3 }} />
       
-      {/* Current Presentations */}
-      <Box sx={{ mb: 4 }}>
+      {/* List of existing presentations */}
+      <Box sx={{ mt: 3 }}>
         <Typography variant="h6" gutterBottom>
-          Current Presentations
+          Available Presentations
         </Typography>
         
-        {presentations.length > 0 ? (
+        {status === 'loading' && (
+          <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+            <CircularProgress />
+          </Box>
+        )}
+        
+        {status === 'failed' && (
+          <Alert severity="error" sx={{ my: 2 }}>
+            Error loading presentations: {error}
+          </Alert>
+        )}
+        
+        {presentations && presentations.length > 0 ? (
           <List>
             {presentations.map((presentation) => (
-              <ListItem key={presentation.id} sx={{ bgcolor: 'background.paper', mb: 1, borderRadius: 1 }}>
+              <ListItem 
+                key={presentation.id}
+                sx={{
+                  border: '1px solid #e0e0e0',
+                  borderRadius: 1,
+                  mb: 1,
+                  '&:hover': { bgcolor: 'rgba(0, 0, 0, 0.04)' }
+                }}
+              >
                 <ListItemIcon>
                   <SlideshowIcon color={presentation.isLocal ? 'primary' : 'secondary'} />
                 </ListItemIcon>
                 <ListItemText
                   primary={presentation.title}
-                  secondary={
-                    <>
-                      {presentation.description}
-                      {presentation.isLocal && (
+                  secondary={<>
+                    {presentation.description}
+                    {presentation.isLocal && (
                         <Typography variant="caption" display="block" color="primary">
                           Local file: {presentation.url}
                         </Typography>
@@ -282,18 +276,18 @@ const PresentationSettings = () => {
                   }
                 />
                 <ListItemSecondaryAction>
-                  <IconButton edge="end" onClick={() => handleEditPresentation(presentation)} sx={{ mr: 1 }}>
+                  <IconButton edge="end" onClick={() => handleEditPresentation(presentation)}>
                     <EditIcon />
                   </IconButton>
-                  <IconButton edge="end" onClick={() => handleDeleteClick(presentation)}>
+                  <IconButton edge="end" onClick={() => handleDeleteClick(presentation)} sx={{ ml: 1 }}>
                     <DeleteIcon />
                   </IconButton>
                 </ListItemSecondaryAction>
               </ListItem>
             ))}
           </List>
-        ) : (
-          <Alert severity="info">
+        ) : status !== 'loading' && (
+          <Alert severity="info" sx={{ my: 2 }}>
             No presentations available. Add your first presentation below.
           </Alert>
         )}
@@ -339,25 +333,33 @@ const PresentationSettings = () => {
         </FormControl>
         
         {presentationSource === 'online' ? (
-          <TextField
-            fullWidth
-            label="Presentation URL"
-            value={newPresentationUrl}
-            onChange={(e) => setNewPresentationUrl(e.target.value)}
-            margin="normal"
-            helperText={
-              <>
-                Enter a publicly accessible URL to a PowerPoint file or a shared link from:
-                <ul style={{ margin: '4px 0 0 20px', padding: 0 }}>
-                  <li>Dropbox (use &apos;Copy link&apos; option)</li>
-                  <li>Google Drive (use &apos;Share {">"}  Anyone with the link&apos;)</li>
-                  <li>Google Slides (use &apos;Share {">"}  Anyone with the link&apos;)</li>
-                  <li>OneDrive (use &apos;Share {">"}  Anyone with the link&apos;)</li>
-                </ul>
-              </>
-            }
-            required
-          />
+          <React.Fragment>
+            <TextField
+              fullWidth
+              label="Presentation URL"
+              value={newPresentationUrl}
+              onChange={(e) => setNewPresentationUrl(e.target.value)}
+              margin="normal"
+              helperText="Enter a publicly accessible URL to a PowerPoint file or a shared link"
+              required
+            />
+            
+            <Box sx={{ mt: 2 }}>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 1 }}>
+                Supported services:
+              </Typography>
+              <Box sx={{ mt: 0.5, ml: 3, mb: 2 }}>
+                <Typography component="div" variant="caption">
+                  <Box component="ul" sx={{ m: 0, p: 0, listStylePosition: 'inside' }}>
+                    <li>Dropbox (use 'Copy link' option)</li>
+                    <li>Google Drive (use 'Share &gt; Anyone with the link')</li>
+                    <li>Google Slides (use 'Share &gt; Anyone with the link')</li>
+                    <li>OneDrive (use 'Share &gt; Anyone with the link')</li>
+                  </Box>
+                </Typography>
+              </Box>
+            </Box>
+          </React.Fragment>
         ) : (
           <Box sx={{ mt: 2 }}>
             <input
@@ -380,16 +382,18 @@ const PresentationSettings = () => {
               </Typography>
             </Box>
             <Alert severity="info" sx={{ mt: 2 }}>
-              <Typography variant="body2">
+              <Typography variant="body2" gutterBottom>
                 <strong>Important:</strong> For local files to work, you must:
-                <ol>
+              </Typography>
+              <Typography component="div" variant="body2">
+                <Box component="ol" sx={{ mt: 1, ml: 2, mb: 2, pl: 1 }}>
                   <li>Place your PowerPoint files in the <code>public/presentations</code> folder of the application</li>
                   <li>The file you select here must match the name of the file in that folder</li>
                   <li>Example: If you select "example.pptx", make sure it exists at "public/presentations/example.pptx"</li>
-                </ol>
-                <Typography variant="caption" color="text.secondary">
-                  Note: Local files cannot be displayed directly in the browser. Users will be provided with a download link instead.
-                </Typography>
+                </Box>
+              </Typography>
+              <Typography variant="caption" color="text.secondary">
+                Note: Local files cannot be displayed directly in the browser. Users will be provided with a download link instead.
               </Typography>
             </Alert>
           </Box>
@@ -415,16 +419,7 @@ const PresentationSettings = () => {
         </Box>
       </Box>
       
-      {/* Snackbar for notifications */}
-      <Snackbar
-        open={openSnackbar}
-        autoHideDuration={6000}
-        onClose={handleSnackbarClose}
-      >
-        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
+      {/* Using parent component's notification system */}
       
       {/* Delete confirmation dialog */}
       <Dialog

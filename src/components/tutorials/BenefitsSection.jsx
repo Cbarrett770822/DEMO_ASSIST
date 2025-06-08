@@ -9,7 +9,6 @@ import {
   ListItemIcon,
   ListItemText,
   Divider,
-  Grid,
   Alert
 } from '@mui/material';
 import CheckCircleOutlineIcon from '@mui/icons-material/CheckCircleOutline';
@@ -52,8 +51,8 @@ const BenefitsSection = () => {
         Benefits of WMS for {displayProcess.title}
       </Typography>
       
-      <Grid container spacing={3}>
-        <Grid item xs={12} md={6}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
+        <Box sx={{ flex: '1 1 calc(50% - 12px)', minWidth: { xs: '100%', md: 'calc(50% - 12px)' } }}>
           <Paper elevation={3} sx={{ p: 3, height: '100%' }}>
             <Typography variant="h6" gutterBottom color="primary">
               Key Benefits
@@ -75,9 +74,9 @@ const BenefitsSection = () => {
               )}
             </List>
           </Paper>
-        </Grid>
+        </Box>
         
-        <Grid item xs={12} md={6}>
+        <Box sx={{ flex: '1 1 calc(50% - 12px)', minWidth: { xs: '100%', md: 'calc(50% - 12px)' } }}>
           <Paper elevation={3} sx={{ p: 3, height: '100%' }}>
             <Typography variant="h6" gutterBottom color="primary">
               Before & After WMS Implementation
@@ -129,8 +128,8 @@ const BenefitsSection = () => {
               </Box>
             </Box>
           </Paper>
-        </Grid>
-      </Grid>
+        </Box>
+      </Box>
     </Box>
   );
 };

@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import {
   Box,
   Typography,
-  Grid,
   Paper,
   Button,
   Divider,
@@ -441,14 +440,15 @@ const IndustryVerticals = () => {
       <Typography variant="h4" component="h2" gutterBottom align="center">
         Industry-Specific WMS Solutions
       </Typography>
-      <Typography variant="subtitle1" paragraph align="center" sx={{ mb: 4 }}>
-        Select your industry to see how WMS addresses your specific challenges
+      <Typography variant="body1" component="div" align="center" sx={{ mb: 4 }}>
+        Select an industry vertical below to see how a Warehouse Management System addresses
+        specific challenges and delivers measurable outcomes for each business type.
       </Typography>
 
       {/* Industry selection grid */}
-      <Grid container spacing={2} sx={{ mb: 4 }}>
+      <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 4 }}>
         {industryData.map((industry) => (
-          <Grid item xs={6} sm={4} md={3} key={industry.id}>
+          <Box key={industry.id} sx={{ flex: { xs: '0 0 calc(50% - 8px)', sm: '0 0 calc(33.333% - 11px)', md: '0 0 calc(25% - 12px)' }, minWidth: { xs: 'calc(50% - 8px)', sm: 'calc(33.333% - 11px)', md: 'calc(25% - 12px)' } }}>
             <Paper
               elevation={selectedIndustry?.id === industry.id ? 6 : 1}
               sx={{
@@ -471,9 +471,9 @@ const IndustryVerticals = () => {
                 {industry.name}
               </Typography>
             </Paper>
-          </Grid>
+          </Box>
         ))}
-      </Grid>
+      </Box>
 
       {/* Selected industry content */}
       {selectedIndustry && (
@@ -496,7 +496,7 @@ const IndustryVerticals = () => {
                   <ListItemIcon>
                     <CheckCircleOutlineIcon sx={{ color: selectedIndustry.color }} />
                   </ListItemIcon>
-                  <ListItemText primary={challenge} />
+                  <ListItemText primary={<Typography component="span">{challenge}</Typography>} />
                 </ListItem>
               ))}
             </List>
@@ -532,9 +532,9 @@ const IndustryVerticals = () => {
             <Typography variant="h5" gutterBottom>
               Step 3: How WMS Addresses These Challenges
             </Typography>
-            <Grid container spacing={2} sx={{ mb: 3 }}>
+            <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 2, mb: 3 }}>
               {selectedIndustry.wmsSolutions.map((solution, index) => (
-                <Grid item xs={12} md={6} key={index}>
+                <Box key={index} sx={{ flex: { xs: '1 1 100%', md: '1 1 calc(50% - 8px)' }, minWidth: { xs: '100%', md: 'calc(50% - 8px)' } }}>
                   <Paper 
                     variant="outlined" 
                     sx={{ 
@@ -546,13 +546,13 @@ const IndustryVerticals = () => {
                     <Typography variant="h6" gutterBottom>
                       {solution.title}
                     </Typography>
-                    <Typography variant="body2">
+                    <Typography variant="body2" component="div">
                       {solution.description}
                     </Typography>
                   </Paper>
-                </Grid>
+                </Box>
               ))}
-            </Grid>
+            </Box>
             
             <Divider sx={{ my: 3 }} />
             
@@ -589,7 +589,7 @@ const IndustryVerticals = () => {
                 borderLeft: `4px solid ${selectedIndustry.color}`
               }}
             >
-              <Typography variant="body1" sx={{ fontStyle: 'italic' }}>
+              <Typography variant="body1" component="div" sx={{ fontStyle: 'italic' }}>
                 "{selectedIndustry.elevatorPitch}"
               </Typography>
             </Paper>

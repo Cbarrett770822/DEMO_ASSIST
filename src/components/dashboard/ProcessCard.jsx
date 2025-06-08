@@ -76,13 +76,15 @@ const ProcessCard = ({ process }) => {
         >
           <IconComponent sx={{ fontSize: 80, color: 'white' }} />
           <Chip 
-            label={process.category.charAt(0).toUpperCase() + process.category.slice(1)} 
+            label={(process.category && typeof process.category === 'string') ? 
+              process.category.charAt(0).toUpperCase() + process.category.slice(1) : 
+              'General'} 
             size="small" 
             sx={{ 
               position: 'absolute', 
               top: 8, 
               right: 8,
-              bgcolor: categoryColorMap[process.category] || 'primary.main',
+              bgcolor: (process.category && categoryColorMap[process.category]) || 'primary.main',
               color: 'white'
             }} 
           />

@@ -17,8 +17,7 @@ import {
   alpha,
   Divider,
   Avatar,
-  Chip,
-  Grid
+  Chip
 } from '@mui/material';
 import WarehouseIcon from '@mui/icons-material/Warehouse';
 import InventoryIcon from '@mui/icons-material/Inventory';
@@ -126,23 +125,27 @@ const DarkHomePage = () => {
   
   // Group processes by category
   useEffect(() => {
-    const processesByCategory = {};
-    
     // Initialize categories
+    const processesByCategory = {};
     processCardTemplates.forEach(template => {
       processesByCategory[template.category] = [];
     });
     
-    // Group processes by their category
-    allProcesses.forEach(process => {
-      const category = process.category;
-      if (processesByCategory[category]) {
-        processesByCategory[category].push(process.title);
-      } else if (category === 'returns' && processesByCategory['advanced']) {
-        // Add returns processes to advanced category
-        processesByCategory['advanced'].push(process.title);
-      }
-    });
+    // Safely handle allProcesses when it's not an array
+    if (allProcesses && Array.isArray(allProcesses)) {
+      // Group processes by their category
+      allProcesses.forEach(process => {
+        const category = process.category;
+        if (processesByCategory[category]) {
+          processesByCategory[category].push(process.title);
+        } else if (category === 'returns' && processesByCategory['advanced']) {
+          // Add returns processes to advanced category
+          processesByCategory['advanced'].push(process.title);
+        }
+      });
+    } else {
+      console.log('Processes data is not available or not an array');
+    }
     
     setCategoryProcesses(processesByCategory);
   }, [allProcesses]);
@@ -181,8 +184,8 @@ const DarkHomePage = () => {
           }}
         />
         
-        <Grid container spacing={0}>
-          <Grid xs={12} md={6} sx={{ p: { xs: 4, md: 6 }, position: 'relative', zIndex: 1 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'row', flexWrap: 'wrap', gap: 0 }}>
+          <Box sx={{ width: { xs: '100%', md: '50%' }, p: { xs: 4, md: 6 }, position: 'relative', zIndex: 1 }}>
             <Typography 
               variant="h2" 
               component="h1" 
@@ -215,9 +218,9 @@ const DarkHomePage = () => {
             <Box sx={{ mb: 4 }}>
               {/* Bullet points removed as requested */}
             </Box>
-          </Grid>
+          </Box>
           
-          <Grid xs={12} md={6} sx={{ display: { xs: 'none', md: 'flex' }, position: 'relative' }}>
+          <Box sx={{ width: { xs: '100%', md: '50%' }, display: { xs: 'none', md: 'flex' }, position: 'relative' }}>
             <Box
               sx={{
                 position: 'absolute',
@@ -245,8 +248,8 @@ const DarkHomePage = () => {
                 }}
               />
             </Box>
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
       </Box>
 
       {/* Key Benefits Section */}

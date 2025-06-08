@@ -26,7 +26,8 @@ import {
   AccordionDetails,
   Alert,
   Snackbar,
-  Chip
+  Chip,
+  CircularProgress
 } from '@mui/material';
 import AddIcon from '@mui/icons-material/Add';
 import DeleteIcon from '@mui/icons-material/Delete';
@@ -37,12 +38,17 @@ import {
   selectAllProcesses, 
   addProcess, 
   updateProcess, 
-  deleteProcess 
+  deleteProcess,
+  fetchProcesses,
+  selectProcessesStatus,
+  selectProcessesError
 } from '../../features/processes/processesSlice';
 
-const ProcessManagement = () => {
+const ProcessManagement = ({ showNotification }) => {
   const dispatch = useDispatch();
   const allProcesses = useSelector(selectAllProcesses);
+  const status = useSelector(selectProcessesStatus);
+  const error = useSelector(selectProcessesError);
   
   const [processes, setProcesses] = useState([]);
   const [selectedProcess, setSelectedProcess] = useState(null);
@@ -51,9 +57,7 @@ const ProcessManagement = () => {
   const [editProcessDialogOpen, setEditProcessDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [processToDelete, setProcessToDelete] = useState(null);
-  const [openSnackbar, setOpenSnackbar] = useState(false);
-  const [snackbarMessage, setSnackbarMessage] = useState('');
-  const [snackbarSeverity, setSnackbarSeverity] = useState('success');
+  // Using parent component's notification system via props
   
   // Form state for new/edit process
   const [processForm, setProcessForm] = useState({
@@ -72,12 +76,23 @@ const ProcessManagement = () => {
     videoUrl: ''
   });
   
-  // Load processes from Redux store
+  // Load processes from API and Redux store
   useEffect(() => {
+    // Fetch processes from API if not already loading or loaded
+    if (status === 'idle') {
+      dispatch(fetchProcesses());
+    }
+    
+    // Update local state when processes change in Redux
     if (allProcesses) {
       setProcesses(allProcesses);
     }
-  }, [allProcesses]);
+    
+    // Show error notification if API fetch failed
+    if (status === 'failed' && error) {
+      showNotification(`Failed to load processes: ${error}`, 'error');
+    }
+  }, [allProcesses, dispatch, status, error, showNotification]);
   
   const handleProcessSelect = (process) => {
     setSelectedProcess(process);
@@ -119,9 +134,7 @@ const ProcessManagement = () => {
     if (processToDelete) {
       dispatch(deleteProcess(processToDelete.id));
       
-      setSnackbarMessage(`Process "${processToDelete.title}" deleted successfully`);
-      setSnackbarSeverity('success');
-      setOpenSnackbar(true);
+      showNotification(`Process "${processToDelete.title}" deleted successfully`, 'success');
       
       if (selectedProcess && selectedProcess.id === processToDelete.id) {
         setSelectedProcess(null);
@@ -152,9 +165,7 @@ const ProcessManagement = () => {
   const handleAddStep = () => {
     // Validate step form
     if (!stepForm.title) {
-      setSnackbarMessage('Step title is required');
-      setSnackbarSeverity('error');
-      setOpenSnackbar(true);
+      showNotification('Step title is required', 'error');
       return;
     }
     
@@ -196,59 +207,60 @@ const ProcessManagement = () => {
   };
   
   const handleSaveProcess = () => {
-    // Validate form
+    // Validate process form
     if (!processForm.title) {
-      setSnackbarMessage('Process title is required');
-      setSnackbarSeverity('error');
-      setOpenSnackbar(true);
+      showNotification('Process title is required', 'error');
       return;
     }
     
     if (processForm.steps.length === 0) {
-      setSnackbarMessage('At least one step is required');
-      setSnackbarSeverity('error');
-      setOpenSnackbar(true);
+      showNotification('At least one step is required', 'error');
       return;
     }
     
-    // Prepare process data
-    const processData = {
-      ...processForm,
-      icon: processForm.icon || 'warehouse'
-    };
-    
-    // Save to Redux store
+    // Create or update process
     if (editMode) {
-      dispatch(updateProcess(processData));
-      setSnackbarMessage(`Process "${processData.title}" updated successfully`);
+      dispatch(updateProcess({
+        id: processForm.id,
+        changes: {
+          title: processForm.title,
+          description: processForm.description,
+          category: processForm.category,
+          videoUrl: processForm.videoUrl,
+          steps: processForm.steps
+        }
+      }));
+      
+      showNotification(`Process "${processForm.title}" updated successfully`, 'success');
     } else {
-      dispatch(addProcess(processData));
-      setSnackbarMessage(`Process "${processData.title}" created successfully`);
+      dispatch(addProcess({
+        id: processForm.id,
+        title: processForm.title,
+        description: processForm.description,
+        category: processForm.category,
+        videoUrl: processForm.videoUrl,
+        steps: processForm.steps
+      }));
+      
+      showNotification(`Process "${processForm.title}" created successfully`, 'success');
     }
-    
-    setSnackbarSeverity('success');
-    setOpenSnackbar(true);
     
     // Close dialogs
     setNewProcessDialogOpen(false);
     setEditProcessDialogOpen(false);
     
-    // Reset forms
-    if (!editMode) {
-      setProcessForm({
-        id: '',
-        title: '',
-        description: '',
-        category: 'inbound',
-        videoUrl: '',
-        steps: []
-      });
-    }
+    // Reset form
+    setProcessForm({
+      id: '',
+      title: '',
+      description: '',
+      category: 'inbound',
+      videoUrl: '',
+      steps: []
+    });
   };
   
-  const handleSnackbarClose = () => {
-    setOpenSnackbar(false);
-  };
+  // Using parent component's notification system
   
   return (
     <Paper sx={{ p: 3 }}>
@@ -274,7 +286,18 @@ const ProcessManagement = () => {
           Available Processes
         </Typography>
         
-        {processes.length > 0 ? (
+        {status === 'loading' ? (
+          <Box sx={{ display: 'flex', justifyContent: 'center', my: 4 }}>
+            <CircularProgress />
+            <Typography variant="body2" color="text.secondary" sx={{ ml: 2 }}>
+              Loading processes...
+            </Typography>
+          </Box>
+        ) : status === 'failed' ? (
+          <Alert severity="error" sx={{ my: 2 }}>
+            Failed to load processes. {error}
+          </Alert>
+        ) : processes.length > 0 ? (
           <List>
             {processes.map((process) => (
               <ListItem 
@@ -283,31 +306,12 @@ const ProcessManagement = () => {
                   bgcolor: 'background.paper', 
                   mb: 1, 
                   borderRadius: 1,
-                  border: selectedProcess?.id === process.id ? '2px solid primary.main' : '1px solid divider'
+                  border: '1px solid rgba(0, 0, 0, 0.12)'
                 }}
-                onClick={() => handleProcessSelect(process)}
-                button
               >
                 <ListItemText
                   primary={process.title}
-                  secondary={
-                    <>
-                      {process.description}
-                      <Box sx={{ mt: 1, display: 'flex', gap: 1 }}>
-                        <Chip 
-                          label={process.category.charAt(0).toUpperCase() + process.category.slice(1)} 
-                          size="small" 
-                          color="primary" 
-                          variant="outlined"
-                        />
-                        <Chip 
-                          label={`${process.steps?.length || 0} steps`} 
-                          size="small" 
-                          variant="outlined"
-                        />
-                      </Box>
-                    </>
-                  }
+                  secondary={process.description}
                 />
                 <ListItemSecondaryAction>
                   <IconButton edge="end" onClick={() => handleEditProcessClick(process)}>
@@ -325,6 +329,7 @@ const ProcessManagement = () => {
             No processes available. Click "New Process" to create one.
           </Alert>
         )}
+
       </Box>
       
       {selectedProcess && (
@@ -344,7 +349,7 @@ const ProcessManagement = () => {
                     <ListItem key={index} sx={{ bgcolor: 'background.paper', mb: 1, borderRadius: 1, border: '1px solid divider' }}>
                       <ListItemText
                         primary={`${index + 1}. ${step.title}`}
-                        secondary={step.description}
+                        secondary={<Typography component="span" variant="body2">{step.description}</Typography>}
                       />
                     </ListItem>
                   ))}
@@ -436,14 +441,14 @@ const ProcessManagement = () => {
                   <ListItemText
                     primary={`${index + 1}. ${step.title}`}
                     secondary={
-                      <>
+                      <Typography component="span" variant="body2">
                         {step.description}
                         {step.videoUrl && (
-                          <Typography variant="caption" display="block" color="primary">
+                          <Typography component="span" variant="caption" display="block" color="primary">
                             Video: {step.videoUrl}
                           </Typography>
                         )}
-                      </>
+                      </Typography>
                     }
                   />
                   <ListItemSecondaryAction>
@@ -679,16 +684,7 @@ const ProcessManagement = () => {
         </DialogActions>
       </Dialog>
       
-      {/* Snackbar for notifications */}
-      <Snackbar
-        open={openSnackbar}
-        autoHideDuration={6000}
-        onClose={handleSnackbarClose}
-      >
-        <Alert onClose={handleSnackbarClose} severity={snackbarSeverity} sx={{ width: '100%' }}>
-          {snackbarMessage}
-        </Alert>
-      </Snackbar>
+      {/* Using parent component's notification system */}
     </Paper>
   );
 };

@@ -5,7 +5,6 @@ import {
   Container,
   Typography,
   Button,
-  Grid,
   Paper,
   Card,
   CardContent,
@@ -35,7 +34,7 @@ const HomePage = () => {
   const theme = useTheme();
 
   return (
-    <Container maxWidth="lg">
+    <Box sx={{ maxWidth: 'lg', mx: 'auto', px: 2 }}>
       {/* Hero Section */}
       <Box
         sx={{
@@ -62,8 +61,13 @@ const HomePage = () => {
           }}
         />
         
-        <Grid container spacing={0}>
-          <Grid item xs={12} md={6} sx={{ p: { xs: 4, md: 6 }, position: 'relative', zIndex: 1 }}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap' }}>
+          <Box sx={{ 
+            width: { xs: '100%', md: '50%' }, 
+            p: { xs: 4, md: 6 }, 
+            position: 'relative', 
+            zIndex: 1 
+          }}>
             <Typography 
               variant="h2" 
               component="h1" 
@@ -146,9 +150,9 @@ const HomePage = () => {
                 Watch Demo
               </Button>
             </Stack>
-          </Grid>
+          </Box>
           
-          <Grid item xs={12} md={6} sx={{ display: { xs: 'none', md: 'flex' }, position: 'relative' }}>
+          <Box sx={{ width: { xs: '100%', md: '50%' }, display: { xs: 'none', md: 'flex' }, position: 'relative' }}>
             <Box
               sx={{
                 position: 'absolute',
@@ -176,8 +180,8 @@ const HomePage = () => {
                 }}
               />
             </Box>
-          </Grid>
-        </Grid>
+          </Box>
+        </Box>
         
         {/* Background decorative elements */}
         <Box
@@ -247,7 +251,7 @@ const HomePage = () => {
           </Typography>
         </Box>
         
-        <Grid container spacing={3}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
           {[
             {
               icon: <VerifiedIcon sx={{ fontSize: 40 }} />,
@@ -282,7 +286,7 @@ const HomePage = () => {
               statLabel: 'Space Savings'
             }
           ].map((benefit, index) => (
-            <Grid item xs={12} sm={6} md={3} key={index}>
+            <Box key={index} sx={{ flex: { xs: '1 1 100%', sm: '1 1 calc(50% - 12px)', md: '1 1 calc(25% - 18px)' }, minWidth: { xs: '100%', sm: 'calc(50% - 12px)', md: 'calc(25% - 18px)' } }}>
               <Paper 
                 elevation={0} 
                 sx={{ 
@@ -342,9 +346,9 @@ const HomePage = () => {
                   </Box>
                 </Box>
               </Paper>
-            </Grid>
+            </Box>
           ))}
-        </Grid>
+        </Box>
       </Box>
 
       {/* Process Categories Section */}
@@ -425,7 +429,7 @@ const HomePage = () => {
             </Typography>
           </Box>
           
-          <Grid container spacing={3}>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
             {[
               {
                 title: 'Inbound Processes',
@@ -456,7 +460,7 @@ const HomePage = () => {
                 processes: ['Returns Processing', 'KPI Tracking', 'Performance Analysis']
               }
             ].map((category, index) => (
-              <Grid item xs={12} md={6} key={index}>
+              <Box key={index} sx={{ flex: { xs: '1 1 100%', md: '1 1 calc(50% - 12px)' }, minWidth: { xs: '100%', md: 'calc(50% - 12px)' } }}>
                 <Card 
                   elevation={0} 
                   sx={{ 
@@ -522,9 +526,9 @@ const HomePage = () => {
                     </Box>
                   </CardActionArea>
                 </Card>
-              </Grid>
+              </Box>
             ))}
-          </Grid>
+          </Box>
         </Box>
       </Box>
       
@@ -568,9 +572,9 @@ const HomePage = () => {
           }}
         />
         
-        <Container maxWidth="md" sx={{ position: 'relative', zIndex: 1 }}>
-          <Grid container spacing={4} alignItems="center">
-            <Grid item xs={12} md={7}>
+        <Box sx={{ position: 'relative', zIndex: 1, maxWidth: 'md', mx: 'auto' }}>
+          <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 4, alignItems: 'center' }}>
+            <Box sx={{ flex: '1 1 100%', width: '100%', maxWidth: { xs: '100%', md: '58.333%' } }}>
               <Box sx={{ color: 'white', textAlign: { xs: 'center', md: 'left' } }}>
                 <Typography 
                   variant="overline" 
@@ -649,9 +653,12 @@ const HomePage = () => {
                   </Button>
                 </Box>
               </Box>
-            </Grid>
+            </Box>
             
-            <Grid item xs={12} md={5} sx={{ display: { xs: 'none', md: 'block' } }}>
+            <Box sx={{ 
+              width: { xs: '100%', md: '50%' }, 
+              display: { xs: 'none', md: 'block' } 
+            }}>
               <Box 
                 sx={{ 
                   display: 'flex',
@@ -690,9 +697,9 @@ const HomePage = () => {
                   />
                 </Box>
               </Box>
-            </Grid>
-          </Grid>
-        </Container>
+            </Box>
+          </Box>
+        </Box>
       </Box>
       
       {/* Add keyframes for the pulse animation */}
@@ -714,7 +721,7 @@ const HomePage = () => {
           },
         }}
       />
-    </Container>
+    </Box>
   );
 };
 

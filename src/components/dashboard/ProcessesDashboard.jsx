@@ -2,7 +2,6 @@ import React, { useEffect } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { useLocation } from 'react-router-dom';
 import { 
-  Grid, 
   Typography, 
   Box, 
   Container,
@@ -59,7 +58,7 @@ const ProcessesDashboard = () => {
         Warehouse Management System Processes
       </Typography>
       
-      <Typography variant="body1" paragraph align="center" sx={{ mb: 4 }}>
+      <Typography variant="body1" component="div" align="center" sx={{ mb: 4 }}>
         Explore the key warehouse processes and learn how a Warehouse Management System (WMS) can optimize each one.
         Select any process to view detailed Flow, benefits, and KPI metrics.
       </Typography>
@@ -101,13 +100,20 @@ const ProcessesDashboard = () => {
       <Divider sx={{ mb: 4 }} />
       
       {filteredProcesses.length > 0 ? (
-        <Grid container spacing={3}>
+        <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 3 }}>
           {filteredProcesses.map((process) => (
-            <Grid item key={process.id} xs={12} sm={6} md={4}>
+            <Box key={process.id} sx={{ 
+              flex: '1 1 calc(33.33% - 16px)', 
+              minWidth: { 
+                xs: '100%', 
+                sm: 'calc(50% - 16px)', 
+                md: 'calc(33.33% - 16px)' 
+              } 
+            }}>
               <ProcessCard process={process} />
-            </Grid>
+            </Box>
           ))}
-        </Grid>
+        </Box>
       ) : (
         <Box sx={{ textAlign: 'center', py: 4 }}>
           <Typography variant="h6">

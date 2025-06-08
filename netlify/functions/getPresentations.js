@@ -1,76 +1,113 @@
 const { connectToDatabase } = require('./utils/mongodb');
 const Presentation = require('./models/Presentation');
-const { authenticateUser } = require('./utils/auth');
 
-// Default presentations if none are stored
-const defaultPresentations = [
-  {
-    id: '1',
-    title: 'WMS Introduction',
-    url: 'https://wms-presentations.s3.amazonaws.com/wms-introduction.pptx',
-    description: 'An introduction to Warehouse Management Systems and their benefits',
-    isLocal: false,
-    fileType: 'pptx',
-    sourceType: 's3',
-    createdAt: new Date(),
-    updatedAt: new Date()
-  },
-  {
-    id: '2',
-    title: 'Inbound Processes',
-    url: 'https://wms-presentations.s3.amazonaws.com/inbound-processes.pptx',
-    description: 'Detailed overview of receiving and putaway processes',
-    isLocal: false,
-    fileType: 'pptx',
-    sourceType: 's3',
-    createdAt: new Date(),
-    updatedAt: new Date()
-  }
-];
+// For simplified authentication
+const isDevelopment = process.env.NODE_ENV === 'development';
 
 exports.handler = async (event, context) => {
+  // Set CORS headers for browser clients
+  const headers = {
+    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Headers': 'Content-Type, Authorization',
+    'Content-Type': 'application/json',
+    'Cache-Control': 'max-age=300' // Cache for 5 minutes
+  };
+
+  // Handle OPTIONS request (preflight)
+  if (event.httpMethod === 'OPTIONS') {
+    return {
+      statusCode: 204,
+      headers,
+      body: ''
+    };
+  }
+  
   // Make sure we're using the correct HTTP method
   if (event.httpMethod !== 'GET') {
-    return { statusCode: 405, body: JSON.stringify({ error: 'Method Not Allowed' }) };
+    return { 
+      statusCode: 405, 
+      headers,
+      body: JSON.stringify({ 
+        success: false,
+        error: 'Method Not Allowed' 
+      }) 
+    };
   }
 
   context.callbackWaitsForEmptyEventLoop = false;
 
   try {
-    // Optional authentication - if token is provided, verify it
-    if (event.headers && event.headers.authorization) {
-      const authResult = await authenticateUser(event);
-      if (authResult.error) {
-        return {
-          statusCode: authResult.statusCode,
-          body: JSON.stringify({ error: authResult.error })
-        };
+    // Parse query parameters
+    const queryParams = event.queryStringParameters || {};
+    const requestedUserId = queryParams.userId;
+    
+    // Optional authentication check - simplified for our token format
+    let userId = null;
+    let username = null;
+    let userRole = null;
+    
+    if (event.headers && (event.headers.authorization || event.headers.Authorization)) {
+      const authHeader = event.headers.authorization || event.headers.Authorization;
+      const token = authHeader.startsWith('Bearer ') ? authHeader.substring(7) : authHeader;
+      
+      if (token) {
+        // For our simplified token format: "userId:username:role"
+        const parts = token.split(':');
+        if (parts.length === 3) {
+          userId = parts[0];
+          username = parts[1];
+          userRole = parts[2];
+          console.log(`Authenticated request from user: ${username} with role: ${userRole}`);
+        } else {
+          console.log('Invalid token format, but proceeding for read-only operation');
+        }
+      }
+    } else if (isDevelopment) {
+      console.log('Development mode: proceeding without authentication for read-only operation');
+      if (requestedUserId) {
+        userId = requestedUserId;
+        username = 'dev-user';
+        userRole = 'admin';
       }
     }
 
     // Connect to the database
     await connectToDatabase();
     
-    // Get all presentations
-    let presentations = await Presentation.find().lean();
+    // Prepare query based on user context
+    let query = {};
     
-    // If no presentations are found, return the default ones
+    // If specific user ID is requested and matches authenticated user or admin
+    if (requestedUserId && (userRole === 'admin' || requestedUserId === userId)) {
+      console.log(`Filtering presentations for requested user: ${requestedUserId}`);
+      query.userId = requestedUserId;
+    } else if (userId) {
+      // If authenticated, show presentations for this user or those without a userId (global)
+      console.log(`Filtering presentations for authenticated user: ${userId}`);
+      query = { $or: [{ userId: userId }, { userId: { $exists: false } }] };
+    }
+    
+    console.log('Database query:', JSON.stringify(query));
+    
+    // Get presentations with query
+    let presentations = await Presentation.find(query).lean();
+    console.log(`Found ${presentations.length} presentations in database`);
+    
+    // If no presentations are found, return an empty array
     if (!presentations || presentations.length === 0) {
-      // Try to initialize with default presentations
-      try {
-        const presentationModels = await Presentation.create(defaultPresentations);
-        presentations = presentationModels.map(model => model.toObject());
-        console.log('Initialized presentations with default data');
-      } catch (initError) {
-        console.error('Error initializing presentations:', initError);
-        return {
-          statusCode: 200,
-          body: JSON.stringify({
-            presentations: defaultPresentations,
-            source: 'default'
-          })
-        };
-      }
+      console.log('No presentations found in database, returning empty array');
+      
+      return {
+        statusCode: 200,
+        headers,
+        body: JSON.stringify({
+          success: true,
+          presentations: [],
+          source: 'database-empty',
+          count: 0,
+          message: 'No presentations found in the database'
+        })
+      };
     }
     
     // Process presentations to add direct URLs and viewer URLs
@@ -80,35 +117,38 @@ exports.handler = async (event, context) => {
       
       return {
         ...presentation,
-        directUrl: tempModel.getDirectUrl(),
-        viewerUrl: tempModel.getViewerUrl()
+        directUrl: tempModel.getDirectUrl ? tempModel.getDirectUrl() : presentation.url,
+        viewerUrl: tempModel.getViewerUrl ? tempModel.getViewerUrl() : presentation.url
       };
     });
     
     // Return presentations
     return {
       statusCode: 200,
-      headers: {
-        'Content-Type': 'application/json',
-        'Cache-Control': 'max-age=300' // Cache for 5 minutes
-      },
+      headers,
       body: JSON.stringify({
+        success: true,
         presentations: processedPresentations,
         source: 'database',
         count: processedPresentations.length
       })
     };
   } catch (error) {
-    console.error('Error getting presentations:', error);
+    console.error('Error getting presentations:', error.message);
+    if (error.stack) {
+      console.error('Stack trace:', error.stack);
+    }
     
-    // Return default presentations in case of error
+    // Return a proper error response
     return {
       statusCode: 500,
+      headers,
       body: JSON.stringify({
-        error: 'Failed to get presentations from database',
+        success: false,
+        error: 'Database error while retrieving presentations',
         message: error.message,
-        presentations: defaultPresentations,
-        source: 'default'
+        details: isDevelopment ? error.stack : undefined,
+        timestamp: new Date().toISOString()
       })
     };
   }
